@@ -1,5 +1,4 @@
-import type { Rerouter } from '$lib/types/index.js';
-import { redirect } from '@sveltejs/kit';
+import type { RedirectChecker } from '$lib/types/index.js';
 
 /**
  * Implementation of the Redirecter interface that simply compares both arguments using strict equality `===`
@@ -8,9 +7,10 @@ import { redirect } from '@sveltejs/kit';
  * @param actual The actual slug value from the url
  * @returns The new slug if the expected and actual values are not equal, otherwise null
  */
-export const NamedRerouter: Rerouter = (expected, actual) => {
+export const NamedChecker: RedirectChecker = (expected, actual) => {
 	// TODO get url.searchParams and return the new route with the same searchparams as before
 	if (expected !== actual) {
-		throw redirect(301, expected);
+		return expected;
 	}
+	return '';
 };

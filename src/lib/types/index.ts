@@ -40,7 +40,13 @@ export type UrlCreator = (slug: string, identifier: string | number) => string;
  * Given the expected and actual url slug, returns the URL the user should be redirected to
  * @returns The url the user should be redirected to, or an empty string if no redirect is needed
  */
-export type Rerouter = (expectedValue: string, actualValue: string) => string;
+export type RedirectChecker = (expectedValue: string, actualValue: string) => string;
+
+/**
+ * Given the expected and actual url slug, throws a redirect error if the user should be redirected
+ * @returns undefined
+ */
+export type Rerouter = (expectedValue: string, actualValue: string) => void;
 
 /**
  * An object containing the functions to handle url self-healing
@@ -53,7 +59,11 @@ export type Selfhealer = {
 	/**
 	 * Given the expected and actual url slug, returns the URL the user should be redirected to
 	 */
-	shouldRedirect: Rerouter;
+	shouldRedirect: RedirectChecker;
+	/**
+	 * Given the expected and actual url slug, throws a redirect error if the user should be redirected
+	 */
+	reroute: Rerouter;
 	/**
 	 * Handles joining and separating slugs with/from the actual identifiers
 	 */

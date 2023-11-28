@@ -1,4 +1,5 @@
 import { HyphenIdentifierHandler } from './identifier-handlers/hyphen-identifier-handler.js';
+import { NamedChecker } from './redirect-checkers/named-checker.js';
 import { NamedRerouter } from './rerouters/named-rerouter.js';
 import { KebabSlugSanitizer } from './slug-sanitizers/kebab-slug-sanitizer.js';
 import type { Selfhealer, UrlCreator } from './types/index.js';
@@ -12,10 +13,11 @@ import type { Selfhealer, UrlCreator } from './types/index.js';
  * @returns An object containing the required functions to handle url self-healing
  */
 export const selfheal = (params?: Partial<Selfhealer>): Selfhealer => {
-	const healer = {
+	const healer: Omit<Selfhealer, 'create'> = {
 		sanitize: params?.sanitize ?? KebabSlugSanitizer,
-		shouldRedirect: params?.shouldRedirect ?? NamedRerouter,
-		identifier: params?.identifier ?? HyphenIdentifierHandler
+		shouldRedirect: params?.shouldRedirect ?? NamedChecker,
+		identifier: params?.identifier ?? HyphenIdentifierHandler,
+		reroute: params?.reroute ?? NamedRerouter
 	};
 
 	/**
