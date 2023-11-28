@@ -1,54 +1,25 @@
 import type { PageServerLoad } from './$types.js';
 import { healer } from '$lib/selfheal.js';
 import { error, redirect } from '@sveltejs/kit';
+import { db } from '$lib/db.js';
 
-export const load: PageServerLoad = async ({ params, request, url }) => {
-	const { identifierHandler, shouldRedirect, slugSanitizer } = healer;
+export const load: PageServerLoad = async ({ params }) => {
+	const {
+		identifier: { join, separate },
+		shouldRedirect,
+		sanitize
+	} = healer;
 
-	console.log('----------------', { params });
+	const { identifier } = separate(params.id);
 
-	const { identifier, slug } = identifierHandler.separateFromSlug(params.id);
-	console.log('Separated identifier from slug', { identifier, slug });
+	// Query the database for the data so you can construct a slug and check if it matches the current one
+	const article = db.articles.find((article) => String(article.id) === identifier);
+	if (!article) throw error(404, `Article ${identifier} not found`);
 
-	const dbResult = db.articles.find((article) => String(article.id) === identifier);
-	console.log('Queried database', { dbResult });
+	const sanitizedSlug = sanitize(article.title);
+	const slug = join(sanitizedSlug, identifier); // The expected slug
 
-	if (!dbResult) throw error(404, `Article ${identifier} not found`);
+	if (shouldRedirect(slug, params.id)) throw redirect(301, slug);
 
-	const sanitizedSlug = slugSanitizer(dbResult.title);
-	console.log('Sanitized slug', dbResult.title, { sanitizedSlug });
-
-	const joinedSlug = identifierHandler.joinToSlug(sanitizedSlug, identifier);
-	console.log('Joined slug and identifier', { joinedSlug });
-
-	if (shouldRedirect(joinedSlug, params.id)) {
-		console.error('Redirecting...');
-		throw redirect(301, joinedSlug);
-	}
-	return {
-		article: dbResult
-	};
-};
-
-// TOdo add a safe heal that in case parsing fails returns an object with an error property and a data property, like superforms
-
-const db = {
-	articles: [
-		{
-			id: 1,
-			title: 'The article title'
-		},
-		{
-			id: 2,
-			title: 'Another article'
-		},
-		{
-			id: 3,
-			title: 'third'
-		},
-		{
-			id: 123,
-			title: '' // testing empty
-		}
-	]
+	return { article };
 };

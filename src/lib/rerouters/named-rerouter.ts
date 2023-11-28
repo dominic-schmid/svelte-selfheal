@@ -12,5 +12,5 @@ export const NamedRerouter: Rerouter = (expected, actual) => {
 	if (expected !== actual) {
 		return expected;
 	}
-	return null;
+	return '';
 };
