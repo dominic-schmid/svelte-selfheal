@@ -1,14 +1,34 @@
-# Svelte Selfheal
+# svelte-selfheal
 
-Svelte Selfheal is a simple Svelte package inspired by [this video from Aaron Francis](https://www.youtube.com/watch?v=a6lnfyES-LA) and heavily based on [a similar package for Laravel](https://github.com/lukeraymonddowning/self-healing-urls).
+A simple Svelte package inspired by [this video from Aaron Francis](https://www.youtube.com/watch?v=a6lnfyES-LA) and heavily based on [a similar package for Laravel](https://github.com/lukeraymonddowning/self-healing-urls).
 
-It allows you to redirect users to a canonical and SEO-friendly URL for a page, even if the slug is altered at any point.
+It allows you to redirect users to a canonical and SEO-friendly URL for a page, even if the slug is altered at any point or doesn't exist at all.
+
+### Example
+
+Canonical URL: `https://my-app.com/blog/my-fancy-title-5312`
+
+The following URLs would still redirect to the correct page
+
+- `/blog/my-fancy-title-5312` _(original)_
+- `/blog/my-fancy-but-spelled-wrong-title-5312`
+- `/blog/5312`
+- `/blog/-5312`
+- `/blog/THIS should NOT be r3alURL   -5312`
 
 ## Installation
 
+Install this package using any of the popular package managers.
+
 ```
 npm i svelte-selfheal
+```
+
+```
 pnpm add svelte-selfheal
+```
+
+```
 yarn add svelte-selfheal
 ```
 
@@ -23,7 +43,6 @@ export const healer = selfheal();
 ```
 
 Now you can use the self-healing functions anywhere across your app.
-
 
 ### Example +page.server.ts
 
@@ -51,9 +70,9 @@ if (!article) throw error(404, `Article ${identifier} not found`);
 4. Compare the DB slug to your current URL (and redirect if they're differerent)
 
 ```ts
-const slug = create(article.title, article.id); 
+const slug = create(article.title, article.id);
 
-// You can either use the built-in rerouter 
+// You can either use the built-in rerouter
 reroute(slug, params.id);
 
 // Or manually check and handle the error yourself
@@ -82,8 +101,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	const article = db.articles.find((article) => String(article.id) === id);
 	if (!article) throw error(404, `Article ${identifier} not found`);
 
-    // Create the correct slug using db data
-	const slug = create(article.title, article.id); 
+	// Create the correct slug using db data
+	const slug = create(article.title, article.id);
 
 	// Either use the built-in rerouter to go to the correct slug (if applicable)
 	reroute(slug, params.id);
@@ -93,7 +112,6 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return { article, slug: params.id };
 };
-
 ```
 
 Don't worry if your "slug" isn't URL friendly; the package will take care of
@@ -113,23 +131,33 @@ During initialization you can configure the `healer` by passing in functions to 
 
 By default, the package uses
 
-Function | Method | Description
--- | -- | --
-sanitize() | Kebab | Trims, replaces spaces with hyphens, removes multiple hyphens, removes hyphens at the start and end of the string and converts to lowercase
-shouldRedirect() && reroute() | Name | Compares the canonical and current routes by their names using a simple `===`
-identifier() | Hyphen | Appends the ID to the slug using a hyphen `-` 
+| Function                      | Method | Description                                                                                                                                 |
+| ----------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| sanitize()                    | Kebab  | Trims, replaces spaces with hyphens, removes multiple hyphens, removes hyphens at the start and end of the string and converts to lowercase |
+| shouldRedirect() && reroute() | Name   | Compares the canonical and current routes by their names using a simple `===`                                                               |
+| identifier()                  | Hyphen | Appends the ID to the slug using a hyphen `-`                                                                                               |
 
-You can however change any of these individually, within the limitations mentioned above. 
+You can however change any of these individually, within the limitations mentioned above.
 
 ```ts
 export const healer = selfheal({
-	sanitize: (slug) => { /* ... */ },
-	identifier: {
-		join(slug, identifier) { /* ... */ },
-		separate(slug) { /* ... */ }
+	sanitize: (slug) => {
+		/* ... */
 	},
-	shouldRedirect: (slug, identifier) => { /* ... */ },
-	reroute: (slug, identifier) => { /* ... */ }
+	identifier: {
+		join(slug, identifier) {
+			/* ... */
+		},
+		separate(slug) {
+			/* ... */
+		}
+	},
+	shouldRedirect: (slug, identifier) => {
+		/* ... */
+	},
+	reroute: (slug, identifier) => {
+		/* ... */
+	}
 });
 ```
 
@@ -158,3 +186,7 @@ export const healer = selfheal({
 ```
 
 This would result in URLs like `/my-fancy-title_123`, depending of course on how your sanitizer works.
+
+## License
+
+Licensed under the [MIT license](https://github.com/dominic-schmid/svelte-selfheal/blob/main/LICENSE.md).
