@@ -40,7 +40,7 @@ export type UrlCreator = (slug: string, identifier: string | number) => string;
  * Given the expected and actual url slug, returns the URL the user should be redirected to
  * @returns The url the user should be redirected to, or an empty string if no redirect is needed
  */
-export type RedirectChecker = (expectedValue: string, actualValue: string) => string;
+export type RedirectChecker = (expectedValue: string, actualValue: string) => boolean;
 
 /**
  * Given the expected and actual url slug, throws a redirect error if the user should be redirected

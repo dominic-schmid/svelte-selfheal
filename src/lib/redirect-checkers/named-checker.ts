@@ -9,8 +9,5 @@ import type { RedirectChecker } from '$lib/types/index.js';
  */
 export const NamedChecker: RedirectChecker = (expected, actual) => {
 	// TODO get url.searchParams and return the new route with the same searchparams as before
-	if (expected !== actual) {
-		return expected;
-	}
-	return '';
+	return expected !== actual;
 };

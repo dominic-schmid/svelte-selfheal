@@ -1,6 +1,16 @@
 {
 	"name": "svelte-selfheal",
 	"version": "0.0.1",
+	"description": "Generate SEO friendly URLs with IDs and redirect to the canonical URL even if the URL is not correct.",
+	"license": "MIT",
+	"author": {
+		"name": "Dominic Schmid",
+		"url": "https://dominic-schmid.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/dominic-schmid/svelte-selfheal"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run package",

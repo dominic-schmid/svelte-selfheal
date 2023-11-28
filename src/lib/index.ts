@@ -12,7 +12,7 @@ import type { Selfhealer, UrlCreator } from './types/index.js';
  * @param params Optional parameters to override the default configuration
  * @returns An object containing the required functions to handle url self-healing
  */
-export const selfheal = (params?: Partial<Selfhealer>): Selfhealer => {
+export const selfheal = (params?: Partial<Omit<Selfhealer, 'create'>>): Selfhealer => {
 	const healer: Omit<Selfhealer, 'create'> = {
 		sanitize: params?.sanitize ?? KebabSlugSanitizer,
 		shouldRedirect: params?.shouldRedirect ?? NamedChecker,

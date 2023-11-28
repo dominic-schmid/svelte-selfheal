@@ -1,58 +1,160 @@
-# create-svelte
+# Svelte Selfheal
 
-Everything you need to build a Svelte library, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+Svelte Selfheal is a simple Svelte package inspired by [this video from Aaron Francis](https://www.youtube.com/watch?v=a6lnfyES-LA) and heavily based on [a similar package for Laravel](https://github.com/lukeraymonddowning/self-healing-urls).
 
-Read more about creating a library [in the docs](https://kit.svelte.dev/docs/packaging).
+It allows you to redirect users to a canonical and SEO-friendly URL for a page, even if the slug is altered at any point.
 
-## Creating a project
+## Installation
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
+```
+npm i svelte-selfheal
+pnpm add svelte-selfheal
+yarn add svelte-selfheal
 ```
 
-## Developing
+## Usage
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Once installed, export a healer:
 
-```bash
-npm run dev
+```ts
+import { selfheal } from 'svelte-selfheal';
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+export const healer = selfheal();
 ```
 
-Everything inside `src/lib` is part of your library, everything inside `src/routes` can be used as a showcase or preview app.
+Now you can use the self-healing functions anywhere across your app.
 
-## Building
 
-To build your library:
+### Example +page.server.ts
 
-```bash
-npm run package
+Inside your load function you want to
+
+1. Import the `healer` and destructure the most important functions
+
+```ts
+const { identifier, shouldRedirect, reroute, create } = healer;
 ```
 
-To create a production version of your showcase app:
+2. Separate the identifier from the slug using the handler you defined on creation
 
-```bash
-npm run build
+```ts
+const { identifier: id } = identifier.separate(params.id);
 ```
 
-You can preview the production build with `npm run preview`.
+3. Query the database using the ID and see if something is found
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
-
-## Publishing
-
-Go into the `package.json` and give your package the desired name through the `"name"` option. Also consider adding a `"license"` field and point it to a `LICENSE` file which you can create from a template (one popular option is the [MIT license](https://opensource.org/license/mit/)).
-
-To publish your library to [npm](https://www.npmjs.com):
-
-```bash
-npm publish
+```ts
+const article = db.articles.find((article) => String(article.id) === id);
+if (!article) throw error(404, `Article ${identifier} not found`);
 ```
+
+4. Compare the DB slug to your current URL (and redirect if they're differerent)
+
+```ts
+const slug = create(article.title, article.id); 
+
+// You can either use the built-in rerouter 
+reroute(slug, params.id);
+
+// Or manually check and handle the error yourself
+if (shouldRedirect(slug, params.id)) throw redirect(301, slug);
+```
+
+Now you are guaranteed to either be on the `404` page because no content with that ID is found or you have been redirected to use the canonical slug for this entity.
+
+### Complete example
+
+```ts
+import { error, redirect } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types.js';
+
+import { healer } from '$lib/selfheal.js';
+import { db } from '$lib/db.js';
+
+export const load: PageServerLoad = async ({ params }) => {
+	const { identifier, shouldRedirect, reroute, create } = healer;
+
+	// Get the identifier from the slug using the identifier handler
+	const { identifier: id } = identifier.separate(params.id);
+
+	// Query the database for the data using the identifier,
+	// so you can construct a slug again and check if it matches the current one
+	const article = db.articles.find((article) => String(article.id) === id);
+	if (!article) throw error(404, `Article ${identifier} not found`);
+
+    // Create the correct slug using db data
+	const slug = create(article.title, article.id); 
+
+	// Either use the built-in rerouter to go to the correct slug (if applicable)
+	reroute(slug, params.id);
+
+	// Or manually check and handle the error case yourself
+	if (shouldRedirect(slug, params.id)) throw redirect(301, slug);
+
+	return { article, slug: params.id };
+};
+
+```
+
+Don't worry if your "slug" isn't URL friendly; the package will take care of
+formatting it for you whenever you call `create()`. In fact, it doesn't even have to be unique because the
+defined unique identifier for your model will also be included at the end.
+
+## Limitations
+
+By default, the package requires that your unique identifier (such as the `id` or `uuid` column)
+not have any `-` characters. You can implement your own `IdentifierHandler` as detailed in the next section.
+
+As of now, all URL parameters are removed during redirect but this will be fixed in a future release.
+
+## Configuration
+
+During initialization you can configure the `healer` by passing in functions to handle its operations, or use its sensible defaults.
+
+By default, the package uses
+
+Function | Method | Description
+-- | -- | --
+sanitize() | Kebab | Trims, replaces spaces with hyphens, removes multiple hyphens, removes hyphens at the start and end of the string and converts to lowercase
+shouldRedirect() && reroute() | Name | Compares the canonical and current routes by their names using a simple `===`
+identifier() | Hyphen | Appends the ID to the slug using a hyphen `-` 
+
+You can however change any of these individually, within the limitations mentioned above. 
+
+```ts
+export const healer = selfheal({
+	sanitize: (slug) => { /* ... */ },
+	identifier: {
+		join(slug, identifier) { /* ... */ },
+		separate(slug) { /* ... */ }
+	},
+	shouldRedirect: (slug, identifier) => { /* ... */ },
+	reroute: (slug, identifier) => { /* ... */ }
+});
+```
+
+### Using a custom `IdentifierHandler`
+
+If you need to customize how a slug is joined to a model identifier (which by default is just a hyphen),
+you can create your own `IdentifierHandler` that returns a `join()` and a `separate()` function and supply itduring the initialization of your `healer`.
+
+Here is an example using a `_` instead
+
+```ts
+export const healer = selfheal({
+	identifier: {
+		join(slug, identifier) {
+			return `${slug}_${identifier}`;
+		},
+		separate(slug) {
+			const [identifier, ...rest] = slug.split('_').reverse();
+			return {
+				identifier,
+				slug: rest.reverse().join('_')
+			};
+		}
+	}
+});
+```
+
+This would result in URLs like `/my-fancy-title_123`, depending of course on how your sanitizer works.
