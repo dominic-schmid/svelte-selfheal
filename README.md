@@ -4,6 +4,8 @@ A simple Svelte package inspired by [this video from Aaron Francis](https://www.
 
 It allows you to redirect users to a canonical and SEO-friendly URL for a page, even if the slug is altered at any point or doesn't exist at all.
 
+![svelte-selfheal-gif](./static/svelte-selfheal.gif)
+
 ### Example
 
 Canonical URL: `https://my-app.com/blog/my-fancy-title-5312`
@@ -93,21 +95,14 @@ import { db } from '$lib/db.js';
 export const load: PageServerLoad = async ({ params }) => {
 	const { identifier, shouldRedirect, reroute, create } = healer;
 
-	// Get the identifier from the slug using the identifier handler
 	const { identifier: id } = identifier.separate(params.id);
 
-	// Query the database for the data using the identifier,
-	// so you can construct a slug again and check if it matches the current one
 	const article = db.articles.find((article) => String(article.id) === id);
 	if (!article) throw error(404, `Article ${identifier} not found`);
 
-	// Create the correct slug using db data
 	const slug = create(article.title, article.id);
 
-	// Either use the built-in rerouter to go to the correct slug (if applicable)
-	reroute(slug, params.id);
-
-	// Or manually check and handle the error case yourself
+	reroute(slug, params.id); // or throw manually
 	if (shouldRedirect(slug, params.id)) throw redirect(301, slug);
 
 	return { article, slug: params.id };
