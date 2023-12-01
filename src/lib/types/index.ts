@@ -1,6 +1,3 @@
-/**
- * Given the desired url slug, returns a usable sanitized version for the url
- */
 export type SlugSanitizer = (
 	slug: string
 	/*
@@ -9,9 +6,6 @@ export type SlugSanitizer = (
 	*/
 ) => string;
 
-/**
- * Handles joining and separating slugs with/from the actual identifiers
- */
 export type IdentifierHandler = {
 	/**
 	 * Joins the slug with the identifier as specified during initialization and returns the new slug
@@ -23,53 +17,63 @@ export type IdentifierHandler = {
 	/**
 	 * Separates the actual identifier from the slug and returns an object containing both
 	 * @param slug The slug to separate
-	 * @returns An object containing the `identifier` and the slug, which **may be empty**!
+	 * @returns An object containing the `identifier` and the slug, which **may be empty** if only the ID was used during the request!
 	 */
-	separate: (slug: string) => { identifier: string | number; slug: string };
+	separate: (slug: string) => { identifier: string; slug: string };
 };
 
-/**
- * Sanitizes the slug and joins it with the identifier
- * @param slug	The slug to sanitize and join with the identifier
- * @param identifier The actual resource identifier
- * @returns	A new slug with the identifier appended in the way you specified in the selfheal configuration
- */
-export type UrlCreator = (slug: string, identifier: string | number) => string;
+export type UrlIdParser = (slug: string) => string;
 
-/**
- * Given the expected and actual url slug, returns the URL the user should be redirected to
- * @returns The url the user should be redirected to, or an empty string if no redirect is needed
- */
-export type RedirectChecker = (expectedValue: string, actualValue: string) => boolean;
+export type UrlCreator = (
+	identifier: string | number,
+	slug: string,
+	searchParams?: URLSearchParams
+) => string;
 
-/**
- * Given the expected and actual url slug, throws a redirect error if the user should be redirected
- * @returns undefined
- */
-export type Rerouter = (expectedValue: string, actualValue: string) => void;
+export type UrlValidator = (
+	expectedUrl: string,
+	actualRoute: string,
+	params?: URLSearchParams
+) => boolean;
 
-/**
- * An object containing the functions to handle url self-healing
- */
-export type Selfhealer = {
+export type RouteComparator = (expectedValue: string, actualValue: string) => boolean;
+
+export type SelfhealerConfig = {
 	/**
-	 * Given the desired url slug, returns a usable sanitized version for the url
+	 * Given the desired URL slug (e.g. an article title), returns a usable sanitized string for the URL
 	 */
 	sanitize: SlugSanitizer;
 	/**
-	 * Given the expected and actual url slug, returns the URL the user should be redirected to
+	 * Given the expected and actual routes, returns `true` if the arguments are equal, `false` otherwise
 	 */
-	shouldRedirect: RedirectChecker;
-	/**
-	 * Given the expected and actual url slug, throws a redirect error if the user should be redirected
-	 */
-	reroute: Rerouter;
+	isEqual: RouteComparator;
 	/**
 	 * Handles joining and separating slugs with/from the actual identifiers
 	 */
 	identifier: IdentifierHandler;
+};
+
+export type Selfhealer = {
+	/**
+	 * Parse the identifier from the *current* route parameter
+	 * @param slug The ID coming from the `params` object in the load function
+	 * @returns The identifier to use for the database lookup
+	 */
+	parseId: UrlIdParser;
+	/**
+	 * Checks if the expected url matches the actual url using the `RedirectChecker` specified during initialization
+	 * @param expectedUrl The expected canonical URL
+	 * @param actualRoute The actual *route* (not the full url) the user is on
+	 * @param params The search params to append to the current route so it can be compared to the canonical URL, if any
+	 * @returns `true` if the values are equal **as specified by the implementation**, `false` if they are unequal
+	 */
+	validate: UrlValidator;
 	/**
 	 * Sanitizes the slug and joins it with the identifier
+	 * @param slug	The slug to sanitize and join with the identifier
+	 * @param identifier The actual resource identifier
+	 * @param searchParams The search params to append to the url, if any
+	 * @returns	A new slug with the identifier appended in the way you specified in the selfheal configuration
 	 */
-	create: UrlCreator;
+	createUrl: UrlCreator;
 };
