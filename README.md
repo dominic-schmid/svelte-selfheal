@@ -50,75 +50,60 @@ Now you can use the self-healing functions anywhere across your app.
 
 Inside your load function you want to
 
-1. Import the `healer` and destructure the most important functions
+1. Separate the identifier from the slug using the handler you defined on creation
 
 ```ts
-const { identifier, shouldRedirect, reroute, create } = healer;
+const identifier = healer.parseId(params.id);
 ```
 
-2. Separate the identifier from the slug using the handler you defined on creation
+2. Query the database using the ID and see if something is found
 
 ```ts
-const { identifier: id } = identifier.separate(params.id);
+const article = db.articles.find((article) => String(article.id) === identifier);
+if (!article) throw error(404, `Article "${identifier}" not found`);
 ```
 
-3. Query the database using the ID and see if something is found
+1. Create the slug using the DB values and compare it to the actual URL, then redirect if needed
 
 ```ts
-const article = db.articles.find((article) => String(article.id) === id);
-if (!article) throw error(404, `Article ${identifier} not found`);
+const expectedUrl = healer.createUrl(article.id, article.title, url.searchParams);
+const valid = healer.validate(expectedUrl, params.id, url.searchParams);
+if (!valid) throw redirect(301, expectedUrl);
 ```
 
-4. Compare the DB slug to your current URL (and redirect if they're differerent)
-
-```ts
-const slug = create(article.title, article.id);
-
-// You can either use the built-in rerouter
-reroute(slug, params.id);
-
-// Or manually check and handle the error yourself
-if (shouldRedirect(slug, params.id)) throw redirect(301, slug);
-```
-
-Now you are guaranteed to either be on the `404` page because no content with that ID is found or you have been redirected to use the canonical slug for this entity.
+Now you are guaranteed to either be on the `404` page because no entity with that ID is found or you have been redirected to the correct, canonical slug for this entity.
 
 ### Complete example
 
 ```ts
+import { db } from '$lib/db.js';
+import { healer } from '$lib/selfheal.js';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types.js';
 
-import { healer } from '$lib/selfheal.js';
-import { db } from '$lib/db.js';
+export const load: PageServerLoad = async ({ params, url }) => {
+	const identifier = healer.parseId(params.id);
 
-export const load: PageServerLoad = async ({ params }) => {
-	const { identifier, shouldRedirect, reroute, create } = healer;
+	const article = db.articles.find((article) => String(article.id) === identifier);
+	if (!article) throw error(404, `Article "${identifier}" not found`);
 
-	const { identifier: id } = identifier.separate(params.id);
-
-	const article = db.articles.find((article) => String(article.id) === id);
-	if (!article) throw error(404, `Article ${identifier} not found`);
-
-	const slug = create(article.title, article.id);
-
-	reroute(slug, params.id); // or throw manually
-	if (shouldRedirect(slug, params.id)) throw redirect(301, slug);
+	const expectedUrl = healer.createUrl(article.id, article.title, url.searchParams);
+	const valid = healer.validate(expectedUrl, params.id, url.searchParams);
+	if (!valid) throw redirect(301, expectedUrl);
 
 	return { article, slug: params.id };
 };
 ```
 
 Don't worry if your "slug" isn't URL friendly; the package will take care of
-formatting it for you whenever you call `create()`. In fact, it doesn't even have to be unique because the
+formatting it for you whenever you call `createUrl()`. In fact, it doesn't even have to be unique because the
 defined unique identifier for your model will also be included at the end.
+If some entities have no article, you can just provide an empty string and the IDs will work as if there were no self-healing going on.
 
 ## Limitations
 
 By default, the package requires that your unique identifier (such as the `id` or `uuid` column)
-not have any `-` characters. You can implement your own `IdentifierHandler` as detailed in the next section.
-
-As of now, all URL parameters are removed during redirect but this will be fixed in a future release.
+not have any `-` characters. However, you can implement your own `IdentifierHandler` as detailed in the next section and override how IDs are joined and separated.
 
 ## Configuration
 
@@ -129,7 +114,7 @@ By default, the package uses
 | Function                      | Method | Description                                                                                                                                 |
 | ----------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | sanitize()                    | Kebab  | Trims, replaces spaces with hyphens, removes multiple hyphens, removes hyphens at the start and end of the string and converts to lowercase |
-| shouldRedirect() && reroute() | Name   | Compares the canonical and current routes by their names using a simple `===`                                                               |
+| isEqual() | Name   | Compares the canonical and current routes by their names using a simple `===`                                                               |
 | identifier()                  | Hyphen | Appends the ID to the slug using a hyphen `-`                                                                                               |
 
 You can however change any of these individually, within the limitations mentioned above.
@@ -137,6 +122,9 @@ You can however change any of these individually, within the limitations mention
 ```ts
 export const healer = selfheal({
 	sanitize: (slug) => {
+		/* ... */
+	},
+	isEqual: (expectedValue, actualValue) => {
 		/* ... */
 	},
 	identifier: {
@@ -147,12 +135,7 @@ export const healer = selfheal({
 			/* ... */
 		}
 	},
-	shouldRedirect: (slug, identifier) => {
-		/* ... */
-	},
-	reroute: (slug, identifier) => {
-		/* ... */
-	}
+	
 });
 ```
 
