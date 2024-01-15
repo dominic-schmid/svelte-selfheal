@@ -1,9 +1,8 @@
 import { HyphenIdentifierHandler } from '$lib/identifier-handlers/hyphen-identifier-handler.js';
 import { describe, expect, it } from 'vitest';
 
-// TODO once implemented, test different configurations of the handler
 describe('HyphenIdentifierHandler', () => {
-	it('adds a hyphen between the two identifiers', () => {
+	it('adds a hyphen between the slug and identifier', () => {
 		const slug = 'any-given-slug';
 		const identifier = '123';
 		expect(HyphenIdentifierHandler.join(slug, identifier)).toBe('any-given-slug-123');
@@ -21,5 +20,21 @@ describe('HyphenIdentifierHandler', () => {
 		const slug = '';
 		const identifier = '123';
 		expect(HyphenIdentifierHandler.join(slug, identifier)).toBe('123');
+	});
+
+	it('handles empty identifier when separating', () => {
+		const slug = 'slug-without-identifier';
+		expect(HyphenIdentifierHandler.separate(slug)).toEqual({
+			identifier: '',
+			slug: 'slug-without-identifier'
+		});
+	});
+
+	it('handles multiple hyphens in the slug when separating', () => {
+		const slug = 'multiple-hyphen-test-identifier';
+		expect(HyphenIdentifierHandler.separate(slug)).toEqual({
+			identifier: 'identifier',
+			slug: 'multiple-hyphen-test'
+		});
 	});
 });
