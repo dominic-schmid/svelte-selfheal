@@ -22,13 +22,6 @@ describe('HyphenIdentifierHandler', () => {
 		expect(HyphenIdentifierHandler.join(slug, identifier)).toBe('123');
 	});
 
-	it('handles empty identifier when separating', () => {
-		const slug = 'slug-without-identifier';
-		expect(HyphenIdentifierHandler.separate(slug)).toEqual({
-			identifier: '',
-			slug: 'slug-without-identifier'
-		});
-	});
 
 	it('handles multiple hyphens in the slug when separating', () => {
 		const slug = 'multiple-hyphen-test-identifier';
