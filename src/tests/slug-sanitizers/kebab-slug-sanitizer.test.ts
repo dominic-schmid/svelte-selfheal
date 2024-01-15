@@ -7,7 +7,7 @@ describe('KebabSlugSanitizer', () => {
 		expect(KebabSlugSanitizer(slug)).toBe('an-uppercase-slug');
 	});
 
-	it('removes anything that isnt alphanumeric, a dash, underscore or space', () => {
+	it('removes non-alphanumeric characters', () => {
 		const badCharacters = [
 			'!',
 			'@',
@@ -38,7 +38,7 @@ describe('KebabSlugSanitizer', () => {
 			"'",
 			'"',
 			';',
-			':'
+			':',
 		];
 
 		badCharacters.forEach((char) => {
@@ -48,18 +48,45 @@ describe('KebabSlugSanitizer', () => {
 		});
 	});
 
-	it('replaces spaces with hyphens', () => {
-		const slug = 'any given slug';
-		expect(KebabSlugSanitizer(slug)).toBe('any-given-slug');
+	it('replaces spaces with hyphens and removes multiple hyphens', () => {
+		const testCases = [
+			{ input: 'any given slug', expected: 'any-given-slug' },
+			{ input: 'any--given------slug-123', expected: 'any-given-slug-123' },
+			{ input: '-any-given-slug-', expected: 'any-given-slug' },
+		];
+
+		testCases.forEach(({ input, expected }) => {
+			it(`transforms "${input}" correctly`, () => {
+				expect(KebabSlugSanitizer(input)).toBe(expected);
+			});
+		});
 	});
 
-	it('removes multiple hyphens', () => {
-		const slug = 'any--given------slug-123';
-		expect(KebabSlugSanitizer(slug)).toBe('any-given-slug-123');
+	it('handles special characters and accents', () => {
+		const testCases = [
+			{ input: 'cliché café', expected: 'cliche-cafe' },
+			{ input: 'mötörhëäd', expected: 'motorhead' },
+		];
+
+		testCases.forEach(({ input, expected }) => {
+			it(`transforms "${input}" correctly`, () => {
+				expect(KebabSlugSanitizer(input)).toBe(expected);
+			});
+		});
 	});
 
-	it('removes hyphens from the start and end', () => {
-		const slug = '-any-given-slug-';
-		expect(KebabSlugSanitizer(slug)).toBe('any-given-slug');
+	it('handles edge cases', () => {
+		const testCases = [
+			{ input: '', expected: '' }, // Empty string
+			{ input: '   leading-trailing-whitespaces   ', expected: 'leading-trailing-whitespaces' },
+			{ input: '___underscores___', expected: 'underscores' },
+			{ input: '   multiple   spaces   ', expected: 'multiple-spaces' },
+		];
+
+		testCases.forEach(({ input, expected }) => {
+			it(`transforms "${input}" correctly`, () => {
+				expect(KebabSlugSanitizer(input)).toBe(expected);
+			});
+		});
 	});
 });
