@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { healer } from '$lib/selfheal.js';
+	import { myHealer } from '$lib/mock/healer.js';
 	export let data;
 </script>
 
@@ -19,8 +19,8 @@
 				<td>{id}</td>
 				<td>{title}</td>
 				<td>
-					<a href="/{healer.createUrl(id, title)}">
-						/{healer.createUrl(id, title)}
+					<a href="/{myHealer.createUrl(id, title)}">
+						/{myHealer.createUrl(id, title)}
 					</a>
 				</td>
 				<td>
