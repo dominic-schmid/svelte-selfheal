@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { myHealer } from '$lib/mock/healer.js';
-	export let data;
+	let { data } = $props();
 </script>
 
 <h1>Articles</h1>
