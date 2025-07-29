@@ -9,7 +9,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/dominic-schmid/svelte-selfheal"
+		"url": "git+https://github.com/dominic-schmid/svelte-selfheal.git"
 	},
 	"homepage": "https://github.com/dominic-schmid/svelte-selfheal#readme",
 	"bugs": {
@@ -28,7 +28,7 @@
 		"typescript"
 	],
 	"engines": {
-		"node": ">=18.0.0"
+		"node": ">=22.0.0"
 	},
 	"scripts": {
 		"dev": "vite dev",
