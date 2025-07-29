@@ -27,9 +27,6 @@
 		"url-parsing",
 		"typescript"
 	],
-	"engines": {
-		"node": ">=22.0.0"
-	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run package",
