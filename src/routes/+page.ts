@@ -3,6 +3,7 @@ import type { PageLoad } from './$types.js';
 
 export const load = (async () => {
 	return {
-		articles: db.articles
+		articles: db.articles,
+		users: db.users
 	};
 }) satisfies PageLoad;

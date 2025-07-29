@@ -11,6 +11,25 @@
 		"type": "git",
 		"url": "https://github.com/dominic-schmid/svelte-selfheal"
 	},
+	"homepage": "https://github.com/dominic-schmid/svelte-selfheal#readme",
+	"bugs": {
+		"url": "https://github.com/dominic-schmid/svelte-selfheal/issues"
+	},
+	"keywords": [
+		"svelte",
+		"sveltekit",
+		"url",
+		"slug",
+		"seo",
+		"redirect",
+		"self-healing",
+		"canonical",
+		"url-parsing",
+		"typescript"
+	],
+	"engines": {
+		"node": ">=18.0.0"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run package",

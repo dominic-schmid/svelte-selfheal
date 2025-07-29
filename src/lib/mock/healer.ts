@@ -1,3 +1,5 @@
-import { Healer } from '$lib/healer.js';
+import { Healer } from '$lib/index.js';
 
-export const myHealer = new Healer();
+export const articleHealer = new Healer({ order: 'id-last' });
+
+export const userHealer = new Healer({ separator: '~' });

@@ -1,9 +1,21 @@
-// Main classes
+// ========================================
+// PRIMARY API - Use these 90% of the time
+// ========================================
+
+// Main classes with improved DX
 export { Healer, TypedHealer } from './healer.js';
+
+// ========================================
+// BUILT-IN CONFIGURATIONS
+// ========================================
 
 // Built-in libraries for easy configuration
 export { sanitizers } from './sanitizers.js';
 export { separators } from './separators.js';
+
+// ========================================
+// TYPESCRIPT SUPPORT
+// ========================================
 
 // Types for TypeScript users
 export type {
@@ -14,5 +26,9 @@ export type {
 	ReplacementConfig
 } from './types.js';
 
-// Advanced customization (for users who need to build custom sanitizers/separators)
+// ========================================
+// ADVANCED CUSTOMIZATION
+// ========================================
+
+// For users who need to build custom sanitizers/separators
 export { createSeparator } from './separators.js';

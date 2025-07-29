@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { articleHealer } from '$lib/mock/healer.js';
+
 	let { data } = $props();
 </script>
 
@@ -13,4 +15,8 @@
 	still load.
 </p>
 
-<a href="{data.slug}/details/{data.article.id}">Go deeper</a>
+<a href="{data.slug}/details/{articleHealer.createUrl(data.article.id, data.article.title)}">
+	Go deeper with canonical URL
+</a>
+
+<a href="{data.slug}/details/{data.article.id}">Go deeper with ID only</a>

@@ -36,31 +36,43 @@ yarn add svelte-selfheal
 
 ## Quick Start
 
-The V2 API is designed for zero-configuration usage. Just import and use:
+The V2 API is designed for zero-configuration usage with **excellent developer experience**:
+
+### ✨ **Super Simple API - One Function Call**
 
 ```ts
 import { Healer } from 'svelte-selfheal';
 
-// Zero config - works immediately with smart defaults
 const healer = new Healer();
 
-// In your SvelteKit load function
+// Everything in one call - parse, fetch, validate, redirect
 export const load: PageServerLoad = async ({ params, url }) => {
-	// Extract ID from URL like "my-article.123"
-	const id = healer.parseId(params.slug);
-
-	// Get your data
-	const article = await getArticle(id);
-	if (!article) throw error(404, 'Article not found');
-
-	// Create canonical URL and redirect if needed
-	healer.validateAndRedirect({
-		entity: { id: article.id, title: article.title },
-		currentSlug: params.id,
-		searchParams: url.searchParams
+	return healer.handleRoute({
+		slug: params.id,
+		searchParams: url.searchParams,
+		fetcher: async (id) => {
+			const article = await getArticle(id);
+			return article ? { entity: article, slug: article.title } : null;
+		},
+		onNotFound: () => error(404, 'Article not found'),
+		transform: (article) => ({ article })
 	});
+};
+```
 
-	return { article };
+### 🚀 **Even Simpler - Reusable Resource Handlers**
+
+```ts
+// Define once per entity type
+const articleHandler = healer.createResourceHandler({
+	fetcher: getArticle,
+	slugField: 'title',
+	notFoundMessage: 'Article not found'
+});
+
+// Use everywhere - one line
+export const load: PageServerLoad = async ({ params, url }) => {
+	return { article: await articleHandler(params.id, url.searchParams) };
 };
 ```
 

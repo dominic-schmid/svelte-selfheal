@@ -6,6 +6,11 @@
 export type SanitizerFn = (input: string) => string;
 
 /**
+ * The order of the ID and slug in the URL
+ */
+export type IdPlacement = 'id-first' | 'id-last';
+
+/**
  * Function that handles joining and separating slugs with IDs
  */
 export interface SeparatorFn {
@@ -53,9 +58,9 @@ export interface HealerConfig {
 	/** Function to sanitize text for URLs. Defaults to unicode sanitizer */
 	sanitizer?: SanitizerFn;
 	/** Function to handle joining/separating slugs and IDs. Defaults to dot separator */
-	separator?: SeparatorFn;
-	/** URL structure order. Defaults to 'default' (slug.id) */
-	order?: 'default' | 'reversed';
+	separator?: string | SeparatorFn;
+	/** URL structure order. Defaults to 'id-first' (id.slug) */
+	order?: IdPlacement;
 	/** Character replacement configuration */
 	replacements?: ReplacementConfig;
 }

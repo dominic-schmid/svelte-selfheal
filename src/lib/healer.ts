@@ -1,18 +1,25 @@
-import type { HealerConfig, TypedHealerConfig } from './types.js';
+import type {
+	HealerConfig,
+	IdPlacement,
+	SanitizerFn,
+	SeparatorFn,
+	TypedHealerConfig
+} from './types.js';
 import { encodeId, decodeId } from './utils.js';
 import { unicode } from './sanitizers.js';
-import { dot } from './separators.js';
+import { createSeparator, underscore } from './separators.js';
 import { createReplacementSanitizer } from './replacements.js';
 import { redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 
 /**
  * Main Healer class for generating SEO-friendly URLs with IDs
  * Works perfectly with zero configuration using smart defaults
  */
 export class Healer {
-	private readonly sanitizer;
-	private readonly separator;
-	private readonly order;
+	private readonly sanitizer: SanitizerFn;
+	private readonly separator: SeparatorFn;
+	private readonly order: IdPlacement;
 
 	/**
 	 * Creates a new Healer instance
@@ -28,8 +35,14 @@ export class Healer {
 			this.sanitizer = baseSanitizer;
 		}
 
-		this.separator = config.separator ?? dot;
-		this.order = config.order ?? 'default';
+		// Set up separator function
+		if (typeof config.separator === 'string') {
+			this.separator = createSeparator(config.separator);
+		} else {
+			this.separator = config.separator ?? underscore;
+		}
+
+		this.order = config.order ?? 'id-first';
 	}
 
 	/**
@@ -52,7 +65,7 @@ export class Healer {
 
 		// Apply the configured order (default: slug.id, reversed: id.slug)
 		const combined =
-			this.order === 'reversed'
+			this.order === 'id-first'
 				? this.separator.join(encodedId, sanitizedSlug)
 				: this.separator.join(sanitizedSlug, encodedId);
 
@@ -67,58 +80,44 @@ export class Healer {
 	/**
 	 * Extracts the original ID from a URL slug
 	 * Automatically handles URL decoding
-	 * @param combined - The combined URL segment (slug + ID)
+	 * @param slug - The URL slug containing the ID (e.g., "my-article.123")
 	 * @returns The original ID, decoded from the URL
 	 * @example
 	 * ```typescript
 	 * const healer = new Healer();
-	 * healer.parseId('my-article-title.123'); // → "123"
-	 * healer.parseId('dashboard.user%3A123%2Forg%3A456'); // → "user:123/org:456"
+	 * healer.extractId('my-article-title.123'); // → "123"
+	 * healer.extractId('dashboard.user%3A123%2Forg%3A456'); // → "user:123/org:456"
 	 * ```
 	 */
-	parseId(combined: string): string {
-		const { slug, id } = this.separator.separate(combined);
+	extractId(slug: string): string {
+		const { slug: slugPart, id } = this.separator.separate(slug);
 
-		// In reversed order, the "slug" is actually the ID and vice versa
-		const encodedId = this.order === 'reversed' ? slug : id;
+		// If no separator found, the entire string is the ID (regardless of order)
+		if (slugPart === '') {
+			return decodeId(id); // 'id' contains the whole input when no separator found
+		}
+
+		// Normal case: separator found, respect the configured order
+		const encodedId = this.order === 'id-first' ? slugPart : id;
 		return decodeId(encodedId);
 	}
 
 	/**
-	 * Validates that a URL matches the expected canonical form
+	 * Checks if a URL slug is in its canonical form
 	 * Always performs exact matching for reliable, predictable behavior
-	 * @param expected - The expected canonical URL
-	 * @param actual - The actual URL to validate
-	 * @returns True if URLs match exactly, false otherwise
+	 * @param expectedSlug - The expected canonical URL slug
+	 * @param actualSlug - The actual URL slug to check
+	 * @returns True if the slug is already canonical, false otherwise
 	 * @example
 	 * ```typescript
 	 * const healer = new Healer();
-	 * const expected = healer.createUrl('123', 'My Article');
-	 * healer.validate(expected, 'my-article.123'); // → true
-	 * healer.validate(expected, 'old-title.123'); // → false
+	 * const expectedSlug = healer.createUrl('123', 'My Article');
+	 * healer.isCanonical(expectedSlug, 'my-article.123'); // → true
+	 * healer.isCanonical(expectedSlug, 'old-title.123'); // → false
 	 * ```
 	 */
-	validate(expected: string, actual: string): boolean {
-		return expected === actual;
-	}
-
-	/**
-	 * Validates a URL and throws a redirect if it doesn't match the expected canonical form
-	 * Convenience method that combines validate() with automatic redirecting
-	 * @param expected - The expected canonical URL
-	 * @param actual - The actual URL to validate
-	 * @throws {Redirect} 301 redirect to the expected URL if validation fails
-	 * @example
-	 * ```typescript
-	 * const healer = new Healer();
-	 * const expectedUrl = healer.createUrl(article.id, article.title);
-	 * healer.validateOrRedirect(expectedUrl, params.slug); // Redirects if needed
-	 * ```
-	 */
-	validateOrRedirect(expected: string, actual: string): void {
-		if (!this.validate(expected, actual)) {
-			throw redirect(301, expected);
-		}
+	isCanonical(expectedSlug: string, actualSlug: string): boolean {
+		return expectedSlug === actualSlug;
 	}
 
 	/**
@@ -160,24 +159,109 @@ export class Healer {
 	}
 
 	/**
-	 * Safely extracts the original ID from a URL slug without throwing
-	 * Returns null only if parsing throws an error (rare due to forgiving separator logic)
-	 * @param combined - The combined URL segment (slug + ID)
-	 * @returns The original ID, or null if parsing fails
+	 * Safely extracts the ID from a URL slug without throwing errors
+	 * Returns null if the slug format is invalid or parsing fails
+	 * @param slug - The URL slug to extract the ID from
+	 * @returns The extracted ID, or null if extraction fails
 	 * @example
 	 * ```typescript
 	 * const healer = new Healer();
-	 * healer.safeParse('my-article.123'); // → "123"
-	 * healer.safeParse('just-an-id'); // → "just-an-id" (treats whole string as ID)
-	 * healer.safeParse(''); // → "" (empty ID)
+	 * healer.tryExtractId('my-article.123'); // → "123"
+	 * healer.tryExtractId('malformed-url'); // → null (graceful failure)
+	 * healer.tryExtractId(''); // → null (invalid input)
 	 * ```
 	 */
-	safeParse(combined: string): string | null {
+	tryExtractId(slug: string): string | null {
 		try {
-			return this.parseId(combined);
+			return this.extractId(slug);
 		} catch {
 			return null;
 		}
+	}
+
+	/**
+	 * High-level handler that manages the entire URL healing workflow
+	 * Provides excellent DX by handling parsing, fetching, validation, and redirects in one call
+	 * @param config - Configuration object with fetcher, slug extraction, and options
+	 * @returns The fetched entity data, ready for your load function
+	 * @example
+	 * ```typescript
+	 * export const load: PageServerLoad = async ({ params, url }) => {
+	 *   return myHealer.handleRoute({
+	 *     slug: params.id,
+	 *     searchParams: url.searchParams,
+	 *     fetcher: async (id) => {
+	 *       const article = await getArticle(id);
+	 *       return article ? { entity: article, slug: article.title } : null;
+	 *     },
+	 *     onNotFound: () => error(404, 'Article not found'),
+	 *     transform: (article) => ({ article })
+	 *   });
+	 * };
+	 * ```
+	 */
+	async handleRoute<TEntity = unknown, TResult = TEntity>(config: {
+		/**
+		 * The URL slug to parse and extract the ID from.
+		 * @example params.id from your load function (e.g. { id: 'my-article_123' })
+		 */
+		slug: string;
+		/**
+		 * URL search parameters to preserve during redirects
+		 * @example url.searchParams from your load function
+		 */
+		searchParams?: URLSearchParams;
+		/**
+		 * Async function to fetch your entity by ID
+		 * Should return null if entity is not found
+		 * @param id - The extracted ID to fetch with
+		 * @returns Object containing the entity and its canonical slug, or null
+		 * @example
+		 * ```typescript
+		 * async (id) => {
+		 *   const article = await getArticle(id);
+		 *   return article ? { entity: article, slug: article.title } : null;
+		 * }
+		 * ```
+		 */
+		fetcher: (id: string) => Promise<{ entity: TEntity; slug: string } | null>;
+		/**
+		 * Called when the entity is not found
+		 * Typically throws a 404 error
+		 * @example () => error(404, 'Article not found')
+		 */
+		onNotFound?: () => never;
+		/**
+		 * Transform the entity before returning
+		 * Useful for shaping the data for your page
+		 * @param entity - The fetched entity
+		 * @returns The transformed data
+		 * @example (article) => ({ article, meta: { views: 0 } })
+		 */
+		transform?: (entity: TEntity) => TResult;
+	}): Promise<TResult> {
+		const id = this.extractId(config.slug);
+
+		const result = await config.fetcher(id);
+
+		if (!result) {
+			if (config.onNotFound) {
+				config.onNotFound();
+			}
+			throw error(404, `Entity with ID "${id}" not found`);
+		}
+
+		this.validateAndRedirect({
+			entity: { id, slug: result.slug },
+			currentSlug: config.slug,
+			searchParams: config.searchParams
+		});
+
+		if (config.transform) {
+			return config.transform(result.entity);
+		}
+
+		return result.entity as unknown as TResult;
 	}
 }
 
@@ -214,32 +298,22 @@ export class TypedHealer<TId = string> {
 
 	/**
 	 * Extracts and decodes a custom ID type from a URL slug
-	 * @param combined - The combined URL segment
+	 * @param slug - The URL slug containing the encoded ID
 	 * @returns The original typed ID
 	 */
-	parseId(combined: string): TId {
-		const stringId = this.healer.parseId(combined);
+	extractId(slug: string): TId {
+		const stringId = this.healer.extractId(slug);
 		return this.idDecoder(stringId);
 	}
 
 	/**
-	 * Validates that a URL matches the expected canonical form
-	 * @param expected - The expected canonical URL
-	 * @param actual - The actual URL to validate
-	 * @returns True if URLs match exactly, false otherwise
+	 * Checks if a URL slug is in its canonical form
+	 * @param expectedSlug - The expected canonical URL slug
+	 * @param actualSlug - The actual URL slug to check
+	 * @returns True if the slug is already canonical, false otherwise
 	 */
-	validate(expected: string, actual: string): boolean {
-		return this.healer.validate(expected, actual);
-	}
-
-	/**
-	 * Validates a URL and throws a redirect if it doesn't match the expected canonical form
-	 * @param expected - The expected canonical URL
-	 * @param actual - The actual URL to validate
-	 * @throws {Redirect} 301 redirect to the expected URL if validation fails
-	 */
-	validateOrRedirect(expected: string, actual: string): void {
-		return this.healer.validateOrRedirect(expected, actual);
+	isCanonical(expectedSlug: string, actualSlug: string): boolean {
+		return this.healer.isCanonical(expectedSlug, actualSlug);
 	}
 
 	/**
@@ -268,9 +342,9 @@ export class TypedHealer<TId = string> {
 	 * @param combined - The combined URL segment
 	 * @returns The original typed ID, or null if parsing fails
 	 */
-	safeParse(combined: string): TId | null {
+	tryExtractId(combined: string): TId | null {
 		try {
-			return this.parseId(combined);
+			return this.extractId(combined);
 		} catch {
 			return null;
 		}
