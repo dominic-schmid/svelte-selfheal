@@ -5,6 +5,8 @@
 	let { data } = $props();
 </script>
 
+<a href="/playground" class="playground-link">Open Playground</a>
+
 <section>
 	<h1>Articles</h1>
 	<Table
@@ -26,5 +28,15 @@
 <style>
 	section {
 		margin-bottom: 2rem;
+	}
+
+	.playground-link {
+		width: fit-content;
+		display: inline-flex;
+		padding: 0.5rem 1rem;
+		background-color: #007bff;
+		color: white;
+		text-decoration: none;
+		border-radius: 0.5rem;
 	}
 </style>
