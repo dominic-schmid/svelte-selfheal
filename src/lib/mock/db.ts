@@ -51,5 +51,27 @@ export const db = {
 			id: 'cl-2x0g-6c05',
 			username: 'bob_builder'
 		}
+	],
+	products: [
+		{
+			id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+			title: 'Amazing Widget Pro'
+		},
+		{
+			id: 'a8b9c0d1-2e3f-4567-8901-234567890abc',
+			title: 'Super-Duper Tool'
+		},
+		{
+			id: '12345678-90ab-cdef-1234-567890abcdef',
+			title: 'Multi-Component System'
+		},
+		{
+			id: 'ffffffff-eeee-dddd-cccc-bbbbbbbbbbbb',
+			title: 'High-Performance Engine'
+		},
+		{
+			id: '00000000-1111-2222-3333-444444444444',
+			title: 'Advanced Analytics Platform'
+		}
 	]
 };

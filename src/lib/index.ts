@@ -31,4 +31,4 @@ export type {
 // ========================================
 
 // For users who need to build custom sanitizers/separators
-export { createSeparator } from './separators.js';
+export { createSeparator, createLengthPrefixedSeparator } from './separators.js';

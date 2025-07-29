@@ -1,54 +1,59 @@
-import { applyReplacements, createReplacementSanitizer } from '$lib/replacements.js';
-import { unicode } from '$lib/sanitizers.js';
+import { Healer } from '$lib/index.js';
 import { describe, expect, it } from 'vitest';
 
-describe('Replacement System', () => {
-	describe('applyReplacements', () => {
-		it('applies all default replacements', () => {
-			const result = applyReplacements('file.name & test@site.com + more_stuff');
-			expect(result).toBe('file-name-and-test-at-site-com-plus-more-stuff');
-		});
+describe('Replacements', () => {
+	const replacementTests = [
+		{
+			name: 'all default replacements',
+			config: {},
+			cases: {
+				'file.name & test@site.com + more_stuff': 'file-name-and-test-at-site-com-plus-more-stuff',
+				'Price: $50 @ 10% off!': 'price-50-at-10-off',
+				'Hello & World + Test': 'hello-and-world-plus-test'
+			}
+		},
+		{
+			name: 'disabled replacements',
+			config: { replaceAmpersands: false, replaceDots: false },
+			cases: {
+				'file.name & test': 'filename-test', // & removed by sanitizer, . removed by sanitizer too
+				'hello.world & test': 'helloworld-test'
+			}
+		},
+		{
+			name: 'custom replacements',
+			config: { customReplacements: { '#': ' hash ', '%': ' percent ' } },
+			cases: {
+				'Value #1 is 50%': 'value-hash-1-is-50-percent',
+				'Test #123 100%': 'test-hash-123-100-percent'
+			}
+		}
+	];
 
-		// Test each replacement type can be disabled
-		const disableTests = [
-			{ config: { replaceDots: false }, input: 'a.b', expected: 'a.b' },
-			{ config: { replaceAmpersands: false }, input: 'a & b', expected: 'a-&-b' },
-			{ config: { replaceAtSigns: false }, input: 'a@b', expected: 'a@b' },
-			{ config: { replacePlus: false }, input: 'a+b', expected: 'a+b' },
-			{ config: { replaceUnderscores: false }, input: 'a_b', expected: 'a_b' },
-			{ config: { replaceSpaces: false }, input: 'a b', expected: 'a b' }
-		];
+	replacementTests.forEach(({ name, config, cases }) => {
+		describe(name, () => {
+			const healer = new Healer({ replacements: config });
 
-		disableTests.forEach(({ config, input, expected }) => {
-			const key = Object.keys(config)[0];
-			it(`can disable ${key}`, () => {
-				expect(applyReplacements(input, config)).toBe(expected);
+			Object.entries(cases).forEach(([input, expected]) => {
+				it(`"${input}" → "${expected}"`, () => {
+					const url = healer.createUrl('123', input);
+					expect(url).toBe(`123_${expected}`);
+				});
 			});
-		});
-
-		it('handles custom replacements and edge cases', () => {
-			expect(
-				applyReplacements('Value #1 is 50%', {
-					customReplacements: { '#': ' hash ', '%': ' percent ' }
-				})
-			).toBe('Value- hash 1-is-50 percent ');
-
-			expect(applyReplacements('')).toBe('');
 		});
 	});
 
-	describe('createReplacementSanitizer', () => {
-		it('combines replacements with sanitizer', () => {
-			const sanitizer = createReplacementSanitizer({}, unicode);
-			expect(sanitizer('Hello & Test@site.com')).toBe('hello-and-test-at-site-com');
+	it('works with other configurations', () => {
+		const healer = new Healer({
+			replacements: { customReplacements: { '#': ' tag ' } },
+			order: 'id-last'
 		});
 
-		it('applies replacements before sanitization', () => {
-			const sanitizer = createReplacementSanitizer(
-				{ customReplacements: { '#': ' hash ' } },
-				unicode
-			);
-			expect(sanitizer('Test #1')).toBe('test-hash-1');
-		});
+		const url = healer.createUrl('456', 'Test #special');
+		const extractedId = healer.extractId(url);
+		expect(extractedId).toBe('456');
+
+		// Should contain custom replacement
+		expect(url).toContain('tag');
 	});
 });

@@ -18,16 +18,18 @@ export interface SeparatorFn {
 	 * Joins a slug with an ID to create a combined URL segment
 	 * @param slug - The URL-friendly text
 	 * @param id - The identifier (already URL-encoded by the library)
+	 * @param order - Whether ID comes first or last in the URL
 	 * @returns The combined URL segment
 	 */
-	join(slug: string, id: string): string;
+	join(slug: string, id: string, order: IdPlacement): string;
 
 	/**
 	 * Separates a combined URL segment back into slug and ID
 	 * @param combined - The combined URL segment
+	 * @param order - Whether ID comes first or last in the URL
 	 * @returns Object containing the separated slug and id (id will be URL-decoded by the library)
 	 */
-	separate(combined: string): { slug: string; id: string };
+	separate(combined: string, order: IdPlacement): { slug: string; id: string };
 }
 
 /**
@@ -57,7 +59,7 @@ export interface ReplacementConfig {
 export interface HealerConfig {
 	/** Function to sanitize text for URLs. Defaults to unicode sanitizer */
 	sanitizer?: SanitizerFn;
-	/** Function to handle joining/separating slugs and IDs. Defaults to dot separator */
+	/** Function to handle joining/separating slugs and IDs. Defaults to underscore separator */
 	separator?: string | SeparatorFn;
 	/** URL structure order. Defaults to 'id-first' (id.slug) */
 	order?: IdPlacement;

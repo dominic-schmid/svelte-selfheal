@@ -63,11 +63,8 @@ export class Healer {
 		const sanitizedSlug = this.sanitizer(slug);
 		const encodedId = encodeId(id.toString());
 
-		// Apply the configured order (default: slug.id, reversed: id.slug)
-		const combined =
-			this.order === 'id-first'
-				? this.separator.join(encodedId, sanitizedSlug)
-				: this.separator.join(sanitizedSlug, encodedId);
+		// Create the combined URL using the separator
+		const combined = this.separator.join(sanitizedSlug, encodedId, this.order);
 
 		// Add search parameters if provided
 		if (searchParams && searchParams.size > 0) {
@@ -90,16 +87,8 @@ export class Healer {
 	 * ```
 	 */
 	extractId(slug: string): string {
-		const { slug: slugPart, id } = this.separator.separate(slug);
-
-		// If no separator found, the entire string is the ID (regardless of order)
-		if (slugPart === '') {
-			return decodeId(id); // 'id' contains the whole input when no separator found
-		}
-
-		// Normal case: separator found, respect the configured order
-		const encodedId = this.order === 'id-first' ? slugPart : id;
-		return decodeId(encodedId);
+		const { id } = this.separator.separate(slug, this.order);
+		return decodeId(id);
 	}
 
 	/**

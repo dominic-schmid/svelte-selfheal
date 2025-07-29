@@ -8,15 +8,15 @@ It allows you to redirect users to a canonical and SEO-friendly URL for a page, 
 
 ### Example
 
-Canonical URL: `https://my-app.com/blog/my-fancy-title.5312`
+Canonical URL: `https://my-app.com/blog/5312_my-fancy-title`
 
 The following URLs would still redirect to the correct page:
 
-- `/blog/my-fancy-title.5312` _(original)_
-- `/blog/my-fancy-but-spelled-wrong-title.5312`
+- `/blog/5312_my-fancy-title` _(original)_
+- `/blog/5312_my-fancy-but-spelled-wrong-title`
+- `/blog/5312_`
 - `/blog/5312`
-- `/blog/.5312`
-- `/blog/THIS should NOT be r3alURL   .5312`
+- `/blog/5312_THIS should NOT be r3alURL`
 
 ## Installation
 
@@ -36,7 +36,7 @@ yarn add svelte-selfheal
 
 ## Quick Start
 
-The V2 API is designed for zero-configuration usage with **excellent developer experience**:
+The API is designed for zero-configuration usage with **excellent developer experience**:
 
 ### ✨ **Super Simple API - One Function Call**
 
@@ -60,62 +60,62 @@ export const load: PageServerLoad = async ({ params, url }) => {
 };
 ```
 
-### 🚀 **Even Simpler - Reusable Resource Handlers**
-
-```ts
-// Define once per entity type
-const articleHandler = healer.createResourceHandler({
-	fetcher: getArticle,
-	slugField: 'title',
-	notFoundMessage: 'Article not found'
-});
-
-// Use everywhere - one line
-export const load: PageServerLoad = async ({ params, url }) => {
-	return { article: await articleHandler(params.id, url.searchParams) };
-};
-```
-
-Or if you would like more control over each step of the healer:
+### 🚀 **Manual Control - Step by Step**
 
 ```ts
 import { Healer } from 'svelte-selfheal';
 
-// Zero config - works immediately with smart defaults
 const healer = new Healer();
 
-// In your SvelteKit load function
 export const load: PageServerLoad = async ({ params, url }) => {
-	// Extract ID from URL like "my-article.123"
-	const id = healer.parseId(params.slug);
+	// Extract ID from URL like "123_my-article"
+	const id = healer.extractId(params.slug);
 
 	// Get your data
 	const article = await getArticle(id);
 	if (!article) throw error(404, 'Article not found');
 
-	// Create canonical URL and redirect if needed
-	const expectedUrl = healer.createUrl(article.id, article.title);
-	if (!healer.validate(expectedUrl, params.slug)) {
-		throw redirect(301, expectedUrl);
-	}
+	// Validate and redirect if needed
+	healer.validateAndRedirect({
+		entity: { id: article.id, slug: article.title },
+		currentSlug: params.slug,
+		searchParams: url.searchParams
+	});
 
 	return { article };
 };
 ```
 
-## Main Concepts
+## Core Concepts
+
+### Default Behavior
+
+By default, `svelte-selfheal` creates URLs with the format `id_slug`:
+
+```ts
+const healer = new Healer();
+healer.createUrl('123', 'My Article Title'); // → "123_my-article-title"
+```
+
+**Key defaults:**
+
+- **Separator**: Underscore (`_`) - safe, doesn't conflict with UUIDs or most ID formats
+- **Order**: ID first (`id_slug`) - ensures ID is always at the beginning for reliable parsing
+- **Sanitizer**: Unicode - handles international characters by removing diacritics
+- **Character replacements**: Enabled - converts `&` to "and", `@` to "at", etc.
 
 ### Healer Class
 
 The `Healer` class is the core of svelte-selfheal. It handles URL creation, ID parsing, and validation.
 
 ```ts
-import { Healer } from 'svelte-selfheal';
+import { Healer, sanitizers, separators } from 'svelte-selfheal';
 
 const healer = new Healer({
 	sanitizer: sanitizers.unicode, // How to clean text (default)
-	separator: separators.dot, // How to join slug.id (default)
-	order: 'default' // slug.id vs id.slug (default)
+	separator: separators.underscore, // How to join id_slug (default)
+	order: 'id-first', // id_slug vs slug_id (default)
+	replacements: { replaceAmpersands: true } // Character replacements
 });
 ```
 
@@ -132,21 +132,22 @@ import { sanitizers } from 'svelte-selfheal';
 sanitizers.unicode; // Default: "Café & Co!" → "cafe-co"
 sanitizers.simple; // Gentle: "Café & Co!" → "cafe-and-co"
 sanitizers.preserve; // Minimal: "Café & Co!" → "café-&-co"
-sanitizers.business; // "Tech Corp Inc." → "tech"
 ```
 
 #### Separators
 
-Control how slug and ID are joined:
+Control how ID and slug are joined:
 
 ```ts
 import { separators } from 'svelte-selfheal';
 
 // Available separators:
-separators.dot; // "my-article.123" (default, collision-free)
-separators.underscore; // "my-article_123"
-separators.tilde; // "my-article~123"
+separators.underscore; // "123_my-article" (default, safe choice)
+separators.dot; // "123.my-article" (collision-free with UUIDs)
+separators.tilde; // "123~my-article" (alternative option)
 ```
+
+**Important limitation**: If your IDs contain the separator character, URL parsing may fail. For example, if using dot separator with UUID-like IDs that contain dots, or underscore separator with IDs containing underscores. Choose your separator based on your ID format.
 
 ### Character Replacements
 
@@ -167,6 +168,89 @@ const healer = new Healer({
 		}
 	}
 });
+```
+
+## Core Methods
+
+### `createUrl(id, slug, searchParams?)`
+
+Creates a clean, SEO-friendly URL from an ID and slug text:
+
+```ts
+const healer = new Healer();
+
+healer.createUrl('123', 'My Article Title');
+// → "123_my-article-title"
+
+healer.createUrl('user:123/org:456', 'Dashboard');
+// → "user%3A123%2Forg%3A456_dashboard"
+
+// With search parameters
+const params = new URLSearchParams({ page: '2' });
+healer.createUrl('123', 'Article', params);
+// → "123_article?page=2"
+```
+
+### `extractId(slug)`
+
+Extracts the original ID from a URL slug:
+
+```ts
+healer.extractId('123_my-article-title'); // → "123"
+healer.extractId('user%3A123%2Forg%3A456_dashboard'); // → "user:123/org:456"
+healer.extractId('123'); // → "123" (no separator found)
+```
+
+### `tryExtractId(slug)`
+
+Safely extracts ID without throwing errors:
+
+```ts
+healer.tryExtractId('123_valid-slug'); // → "123"
+healer.tryExtractId('malformed-input'); // → "malformed-input"
+healer.tryExtractId(''); // → null
+```
+
+### `isCanonical(expected, actual)`
+
+Checks if a URL slug is in its canonical form:
+
+```ts
+const canonical = healer.createUrl('123', 'My Article');
+healer.isCanonical(canonical, '123_my-article'); // → true
+healer.isCanonical(canonical, '123_wrong-title'); // → false
+```
+
+### `validateAndRedirect(options)`
+
+Validates the current URL and redirects if needed:
+
+```ts
+healer.validateAndRedirect({
+	entity: { id: '123', slug: 'My Article' },
+	currentSlug: params.slug,
+	searchParams: url.searchParams // Preserved in redirect
+});
+// Throws 301 redirect if currentSlug doesn't match canonical form
+```
+
+### `handleRoute(config)` - High-Level Workflow
+
+Manages the entire URL healing workflow in one call:
+
+```ts
+export const load: PageServerLoad = async ({ params, url }) => {
+	return healer.handleRoute({
+		slug: params.id,
+		searchParams: url.searchParams,
+		fetcher: async (id) => {
+			const article = await getArticle(id);
+			return article ? { entity: article, slug: article.title } : null;
+		},
+		onNotFound: () => error(404, 'Article not found'),
+		transform: (article) => ({ article, meta: 'additional data' })
+	});
+};
 ```
 
 ## Advanced Configuration
@@ -191,25 +275,25 @@ const healer = new Healer({
 
 ### Custom Separators
 
-Define how slugs and IDs are joined:
+Define how IDs and slugs are joined:
 
 ```ts
 import { createSeparator } from 'svelte-selfheal';
 
 // Simple character separator
-const pipeSeparator = createSeparator('|'); // "my-article|123"
+const pipeSeparator = createSeparator('|'); // "123|my-article"
 
 // Complex custom separator
 const customSeparator = {
-	join: (slug: string, id: string) => {
-		return slug ? `${slug}::${id}` : id;
+	join: (id: string, slug: string) => {
+		return slug ? `${id}::${slug}` : id;
 	},
 	separate: (combined: string) => {
 		const lastIndex = combined.lastIndexOf('::');
 		if (lastIndex === -1) return { slug: '', id: combined };
 		return {
-			slug: combined.substring(0, lastIndex),
-			id: combined.substring(lastIndex + 2)
+			slug: combined.substring(lastIndex + 2),
+			id: combined.substring(0, lastIndex)
 		};
 	}
 };
@@ -235,7 +319,19 @@ const healer = new Healer({
 // "Hello & World #1" → "HELLO_AND_WORLD_HASH_1"
 ```
 
-### Typed IDs
+### URL Structure Options
+
+```ts
+// Default: id_slug format
+const healer = new Healer();
+healer.createUrl('123', 'My Article'); // → "123_my-article"
+
+// Reversed: slug_id format
+const reversedHealer = new Healer({ order: 'id-last' });
+reversedHealer.createUrl('123', 'My Article'); // → "my-article_123"
+```
+
+## TypedHealer for Complex IDs
 
 For complex ID types beyond strings:
 
@@ -248,31 +344,17 @@ interface CompositeId {
 }
 
 const healer = new TypedHealer<CompositeId>({
-	idEncoder: (id) => `${id.userId}-${id.orgId}`,
+	idEncoder: (id) => `${id.userId}@${id.orgId}`,
 	idDecoder: (encoded) => {
-		const [userId, orgId] = encoded.split('-');
+		const [userId, orgId] = encoded.split('@');
 		return { userId, orgId };
 	}
 });
 
 const url = healer.createUrl({ userId: '123', orgId: '456' }, 'Dashboard');
-// → "dashboard.123-456"
+// → "123%40456_dashboard"
 
-const id = healer.parseId(url); // { userId: '123', orgId: '456' }
-```
-
-### URL Structure Options
-
-Choose between `slug.id` and `id.slug` formats:
-
-```ts
-// Default: slug.id format
-const healer = new Healer();
-healer.createUrl('123', 'My Article'); // → "my-article.123"
-
-// Reversed: id.slug format
-const reversedHealer = new Healer({ order: 'reversed' });
-reversedHealer.createUrl('123', 'My Article'); // → "123.my-article"
+const id = healer.extractId(url); // { userId: '123', orgId: '456' }
 ```
 
 ## Complete Example
@@ -284,6 +366,7 @@ import { Healer, sanitizers, separators } from 'svelte-selfheal';
 export const healer = new Healer({
 	sanitizer: sanitizers.simple,
 	separator: separators.dot,
+	order: 'id-last',
 	replacements: {
 		customReplacements: { '@': ' at ' }
 	}
@@ -291,73 +374,161 @@ export const healer = new Healer({
 
 // routes/blog/[slug]/+page.server.ts
 import { healer } from '$lib/healer.js';
-import { error, redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async ({ params, url }) => {
-	const id = healer.parseId(params.slug);
-
-	const article = await db.articles.findById(id);
-	if (!article) throw error(404, 'Article not found');
-
-	const expectedUrl = healer.createUrl(article.id, article.title, url.searchParams);
-	if (!healer.validate(expectedUrl, params.slug, url.searchParams)) {
-		throw redirect(301, expectedUrl);
-	}
-
-	return { article };
+	return healer.handleRoute({
+		slug: params.slug,
+		searchParams: url.searchParams,
+		fetcher: async (id) => {
+			const article = await db.articles.findById(id);
+			return article ? { entity: article, slug: article.title } : null;
+		},
+		onNotFound: () => error(404, 'Article not found'),
+		transform: (article) => ({ article })
+	});
 };
 ```
 
-## V1 vs V2 Migration
+## URL Parsing Limitations
 
-### V1 (Legacy)
+**Separator Character Conflicts**: If your IDs contain the separator character, URL parsing will fail catastrophically. The most common example is using UUIDv4 with a hyphen separator:
 
 ```ts
-import { selfheal } from 'svelte-selfheal';
+// ❌ GUARANTEED FAILURE: UUIDv4 with hyphen separator
+import { createSeparator } from 'svelte-selfheal';
 
-export const healer = selfheal({
-	sanitize: (slug) => slug.toLowerCase(),
-	identifier: {
-		join: (slug, id) => `${slug}-${id}`,
-		separate: (combined) => {
-			/* complex logic */
-		}
-	},
-	isEqual: (expected, actual) => expected === actual
-});
+const hyphenSeparator = createSeparator('-');
+const healer = new Healer({ separator: hyphenSeparator });
+
+const uuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'; // Standard UUIDv4
+healer.createUrl(uuid, 'My Article'); // → "f47ac10b-58cc-4372-a567-0e02b2c3d479-my-article"
+healer.extractId('f47ac10b-58cc-4372-a567-0e02b2c3d479-my-article');
+// → "0e02b2c3d479" (WRONG! Only gets the last part after final hyphen)
 ```
 
-### V2 (Current)
+**More Examples of Problematic Combinations:**
 
 ```ts
-import { Healer, sanitizers, separators } from 'svelte-selfheal';
+// ❌ Dot separator with dotted IDs
+const healer = new Healer({ separator: separators.dot });
+healer.createUrl('1.2.3', 'test'); // → "1.2.3.test"
+healer.extractId('1.2.3.test'); // → "test" (incorrect!)
 
-export const healer = new Healer({
+// ❌ Underscore separator with underscore-containing IDs
+const healer2 = new Healer({ separator: separators.underscore });
+healer2.createUrl('user_123_admin', 'dashboard'); // → "user_123_admin_dashboard"
+healer2.extractId('user_123_admin_dashboard'); // → "dashboard" (incorrect!)
+
+// ✅ SAFE: Choose separators that don't appear in your IDs
+const safeHealer = new Healer({ separator: separators.tilde }); // ~ rarely used in IDs
+safeHealer.createUrl('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'article');
+// → "f47ac10b-58cc-4372-a567-0e02b2c3d479~article"
+safeHealer.extractId('f47ac10b-58cc-4372-a567-0e02b2c3d479~article');
+// → "f47ac10b-58cc-4372-a567-0e02b2c3d479" (correct!)
+```
+
+**Why This Happens**: The library uses `lastIndexOf()` to find separators and splits at the rightmost occurrence. This means if your ID contains the separator character, the library will incorrectly identify an internal separator as the ID/slug boundary.
+
+**Solution**: Always choose a separator character that will never appear in your ID format. For UUIDs, use `~` or `_`. For numeric IDs, any separator is usually safe.
+
+## Length-Prefixed Separator (Advanced Solution)
+
+For cases where you **cannot** control the ID format and **must** use a separator that appears in your IDs, the library provides a length-prefixed separator that guarantees conflict resolution:
+
+```ts
+import { Healer, createLengthPrefixedSeparator } from 'svelte-selfheal';
+
+// ✅ 100% RELIABLE: Works with any ID format
+const healer = new Healer({
+	separator: createLengthPrefixedSeparator('-'),
+	order: 'id-first' // Order is configurable, defaults to 'id-first'
+});
+
+const uuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'; // Contains hyphens
+healer.createUrl(uuid, 'My Article');
+// → "36-f47ac10b-58cc-4372-a567-0e02b2c3d479-my-article"
+//    ↑  ↑                                      ↑
+//   len ID (36 chars)                        slug
+
+healer.extractId('36-f47ac10b-58cc-4372-a567-0e02b2c3d479-my-article');
+// → "f47ac10b-58cc-4372-a567-0e02b2c3d479" (CORRECT!)
+```
+
+**How It Works**: The length-prefixed format uses `{length}-{first}-{second}` where:
+
+- `length` = exact character count of the first element
+- `first` = either ID or slug (depending on configured order)
+- `second` = either slug or ID (depending on configured order)
+
+The order follows your Healer configuration (`id-first` or `id-last`) and is automatically passed to the separator function.
+
+**Examples**:
+
+```ts
+// Default order: id-first (ID comes first in URL)
+const healer = new Healer({
+	separator: createLengthPrefixedSeparator('-'),
+	order: 'id-first' // This is the default
+});
+
+healer.createUrl('user-123-admin', 'Dashboard Page');
+// → "13-user-123-admin-dashboard-page"
+//    ↑  ↑               ↑
+//   len ID (13 chars)  slug
+
+// Custom order: id-last (slug comes first in URL)
+const idLastHealer = new Healer({
+	separator: createLengthPrefixedSeparator('-'),
+	order: 'id-last'
+});
+
+idLastHealer.createUrl('user-123-admin', 'Dashboard Page');
+// → "14-dashboard-page-user-123-admin"
+//    ↑  ↑             ↑
+//   len slug (14)     ID
+
+// Works with any separator character
+const pipeHealer = new Healer({ separator: createLengthPrefixedSeparator('|') });
+pipeHealer.createUrl('a|b|c', 'test'); // → "5|a|b|c|test"
+
+// Graceful fallback for non-length-prefixed URLs
+healer.extractId('regular-url-format'); // → "regular" (falls back to regular parsing)
+```
+
+### Trade-offs
+
+**✅ Advantages:**
+
+- **100% reliable** - works with any ID format
+- **Conflict-free** - no separator character limitations
+- **Backward compatible** - gracefully handles non-length-prefixed URLs
+
+**❌ Disadvantages:**
+
+- **Less human-readable** - URLs like `36-f47ac10b-58cc-4372-a567-0e02b2c3d479-article`
+- **Slightly longer** - adds length prefix overhead
+- **More complex** - harder to manually construct/read URLs
+
+**Technical Note**: The `createLengthPrefixedSeparator()` function creates a separator that receives the `order` parameter from the Healer class configuration. This allows the same separator to work correctly with both `id-first` and `id-last` configurations.
+
+**Recommendation**: Only use length-prefixed separators when you have no control over ID format and regular separators fail. For most use cases, choosing a safe separator character (`~`, `_`) is simpler and more user-friendly.
+
+## TypeScript Support
+
+Full TypeScript support with proper generics:
+
+```ts
+import type { HealerConfig, TypedHealerConfig, SanitizerFn, SeparatorFn } from 'svelte-selfheal';
+
+// Custom configuration with type safety
+const config: HealerConfig = {
 	sanitizer: sanitizers.unicode,
 	separator: separators.dot,
-	order: 'default'
-});
+	order: 'id-first'
+};
 ```
-
-### Key Improvements in V2
-
-1. **Zero Configuration**: Works perfectly with `new Healer()` - no setup required
-2. **Collision-Free Design**: Dot separator (`.`) doesn't conflict with UUIDs or common ID formats
-3. **Built-in Libraries**: Organized, discoverable sanitizers and separators
-4. **Type Safety**: Full TypeScript support with proper generics
-5. **Simpler API**: Class-based design with clear, documented options
-6. **Better Defaults**: Smart defaults that work for 90% of use cases
-7. **Automatic URL Safety**: Library handles all encoding/decoding transparently
-8. **Flexible Character Handling**: Powerful replacement system for fine-tuning
-
-### Migration Steps
-
-1. Replace `selfheal()` function with `new Healer()`
-2. Replace `sanitize` option with `sanitizer` (choose from built-in library)
-3. Replace `identifier` option with `separator` (choose from built-in library)
-4. Remove `isEqual` option (validation is now automatic and exact)
-5. Update method calls - the core methods remain the same: `createUrl()`, `parseId()`, `validate()`
 
 ## License
 

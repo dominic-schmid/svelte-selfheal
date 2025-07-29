@@ -50,29 +50,11 @@ export const preserve: SanitizerFn = (input: string): string => {
 };
 
 /**
- * Business sanitizer - removes common business suffixes and cleans text
- * Useful for company names and business-related content
- * @example "Tech Corp Inc. & Co!" → "tech-corp"
- */
-export const business: SanitizerFn = (input: string): string => {
-	return condenseHyphens(
-		normalizeUnicode(input)
-			.trim()
-			.replace(/\b(Inc|LLC|Corp|Ltd|Co|Company|Corporation|Limited)\b\.?/gi, '') // Remove business suffixes
-			.replace(/[&@]/g, ' and ') // Replace symbols with words
-			.replace(/[^\w\s-]/g, '') // Remove special characters
-			.replace(/\s+/g, '-') // Spaces to hyphens
-			.toLowerCase()
-	);
-};
-
-/**
  * Collection of built-in sanitizer functions
  * Export as named object for easy access and documentation
  */
 export const sanitizers = {
 	unicode,
 	simple,
-	preserve,
-	business
+	preserve
 } as const;
