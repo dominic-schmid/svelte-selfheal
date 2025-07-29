@@ -15,8 +15,16 @@
 	still load.
 </p>
 
-<a href="{data.slug}/details/{articleHealer.createUrl(data.article.id, data.article.title)}">
-	Go deeper with canonical URL
-</a>
-
-<a href="{data.slug}/details/{data.article.id}">Go deeper with ID only</a>
+<div>
+	<strong>Go deeper</strong>
+	<ul>
+		<li>
+			<a href="{data.slug}/details/{articleHealer.createUrl(data.article.id, data.article.title)}">
+				With canonical URL
+			</a>
+		</li>
+		<li>
+			<a href="{data.slug}/details/{data.article.id}">With ID only</a>
+		</li>
+	</ul>
+</div>

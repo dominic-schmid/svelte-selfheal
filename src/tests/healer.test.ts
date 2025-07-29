@@ -1,4 +1,4 @@
-import { Healer, sanitizers, createLengthPrefixedSeparator } from '$lib/index.js';
+import { Healer, sanitizers } from '$lib/index.js';
 import { describe, expect, it } from 'vitest';
 
 describe('Healer', () => {
@@ -116,84 +116,6 @@ describe('Healer', () => {
 
 			// Should throw redirect on wrong slug
 			expect(() => healer.validateAndRedirect({ entity, currentSlug: 'wrong-slug' })).toThrow();
-		});
-	});
-
-	describe('Length-prefixed separator integration', () => {
-		const lengthPrefixedHealer = new Healer({
-			separator: createLengthPrefixedSeparator('-')
-		});
-
-		it('round-trip with UUID containing hyphens', () => {
-			const uuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
-			const slug = 'Widget'; // No hyphens to avoid separator conflicts
-
-			const url = lengthPrefixedHealer.createUrl(uuid, slug);
-			const extractedId = lengthPrefixedHealer.extractId(url);
-
-			expect(extractedId).toBe(uuid);
-			// Should start with a number (length prefix)
-			expect(/^\d+/.test(url)).toBe(true);
-		});
-
-		it('round-trip with IDs containing separator character', () => {
-			const id = 'user-123-admin';
-			const slug = 'Dashboard'; // No hyphens to avoid separator conflicts
-
-			const url = lengthPrefixedHealer.createUrl(id, slug);
-			const extractedId = lengthPrefixedHealer.extractId(url);
-
-			expect(extractedId).toBe(id);
-		});
-
-		it('works with id-last order', () => {
-			const customHealer = new Healer({
-				separator: createLengthPrefixedSeparator('|'),
-				order: 'id-last'
-			});
-
-			const id = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
-			const slug = 'test';
-
-			const url = customHealer.createUrl(id, slug);
-			const extractedId = customHealer.extractId(url);
-
-			expect(extractedId).toBe(id);
-			expect(url).toContain('|'); // Should use custom separator
-		});
-
-		it('handles empty slugs correctly', () => {
-			const id = 'simple123'; // Use an ID without separators for empty slug test
-			const url = lengthPrefixedHealer.createUrl(id, '');
-			const extractedId = lengthPrefixedHealer.extractId(url);
-
-			expect(url).toBe(id); // No prefix when no slug
-			expect(extractedId).toBe(id);
-		});
-
-		it('validates and redirects with length-prefixed URLs', () => {
-			const entity = {
-				id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-				slug: 'My Product'
-			};
-			const correctSlug = lengthPrefixedHealer.createUrl(entity.id, entity.slug);
-
-			// Should not throw on correct slug
-			expect(() =>
-				lengthPrefixedHealer.validateAndRedirect({
-					entity,
-					currentSlug: correctSlug
-				})
-			).not.toThrow();
-
-			// Should throw redirect on wrong slug with same ID
-			const wrongSlug = lengthPrefixedHealer.createUrl(entity.id, 'Wrong Title');
-			expect(() =>
-				lengthPrefixedHealer.validateAndRedirect({
-					entity,
-					currentSlug: wrongSlug
-				})
-			).toThrow();
 		});
 	});
 });

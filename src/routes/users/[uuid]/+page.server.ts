@@ -17,5 +17,5 @@ export const load: PageServerLoad = async ({ params, url }) => {
 
 	console.log('Found user', result.username);
 
-	return { user: result };
+	return { user: result, slug: params.uuid };
 };

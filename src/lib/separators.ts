@@ -34,68 +34,6 @@ export function createSeparator(separator: string): SeparatorFn {
 }
 
 /**
- * Creates a length-prefixed separator that guarantees no conflicts
- * Uses format: length-id-slug (when id-first) or length-slug-id (when id-last)
- * This approach is 100% reliable regardless of what characters appear in the content
- * @param separator - The character to use as separator (required)
- * @returns A SeparatorFn that uses length-prefixed parsing
- */
-export function createLengthPrefixedSeparator(separator: string): SeparatorFn {
-	// Create a regular separator for clean fallback
-	const regularSeparator = createSeparator(separator);
-
-	return {
-		join: (slug: string, id: string, order: IdPlacement): string => {
-			if (!slug) return id;
-
-			// Always use length-prefixed format when creating URLs
-			const [first, second] = order === 'id-first' ? [id, slug] : [slug, id];
-			return `${first.length}${separator}${first}${separator}${second}`;
-		},
-
-		separate: (combined: string, order: IdPlacement): { slug: string; id: string } => {
-			// Quick check: no separators = just ID
-			if (!combined.includes(separator)) {
-				return { slug: '', id: combined };
-			}
-
-			// Try to parse as length-prefixed format first
-			const firstSepIndex = combined.indexOf(separator);
-			const lengthStr = combined.substring(0, firstSepIndex);
-			const length = parseInt(lengthStr, 10);
-
-			// Valid length prefix detected
-			if (length === length && length >= 0) {
-				const contentStart = firstSepIndex + separator.length;
-				const contentEnd = contentStart + length;
-
-				// Ensure we have enough content for the specified length
-				if (contentEnd <= combined.length) {
-					const firstPart = combined.substring(contentStart, contentEnd);
-
-					// Check if there's a second separator at the expected position
-					const secondSepStart = contentEnd;
-					if (
-						secondSepStart < combined.length &&
-						combined.substring(secondSepStart, secondSepStart + separator.length) === separator
-					) {
-						// Full format: "length-first-second"
-						const secondPart = combined.substring(secondSepStart + separator.length);
-						return order === 'id-first'
-							? { slug: secondPart, id: firstPart }
-							: { slug: firstPart, id: secondPart };
-					}
-					// Partial formats like "3-abc" should fall back to regular separator
-				}
-			}
-
-			// Not a valid length-prefixed format - delegate to regular separator
-			return regularSeparator.separate(combined, order);
-		}
-	};
-}
-
-/**
  * Underscore separator (default) - clean and collision-free
  * Creates URLs like: /article/my-title_123
  * Good for: when dots might conflict with your routing
