@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { userHealer } from '$lib/mock/healer.js';
+	import { userHealer } from '$demo/mock/healer.js';
 
 	let { data } = $props();
 </script>

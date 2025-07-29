@@ -1,5 +1,5 @@
-import { db } from '$lib/mock/db.js';
-import { articleHealer } from '$lib/mock/healer.js';
+import { db } from '$demo/mock/db.js';
+import { articleHealer } from '$demo/mock/healer.js';
 import type { PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async ({ params, url }) => {

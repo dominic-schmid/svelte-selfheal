@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { playgroundStore } from '$lib/stores/playground.js';
+import { playgroundStore } from '$demo/stores/playground.js';
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types.js';
 

@@ -1,4 +1,4 @@
-import { db } from '$lib/mock/db.js';
+import { db } from '$demo/mock/db.js';
 import type { PageLoad } from './$types.js';
 
 export const load = (async () => {

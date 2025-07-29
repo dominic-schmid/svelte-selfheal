@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Table from '$lib/components/Table.svelte';
-	import ConfigGroup from '$lib/components/ConfigGroup.svelte';
-	import SliderGroup from '$lib/components/SliderGroup.svelte';
-	import { playgroundStore } from '$lib/stores/playground.js';
+	import Table from '$demo/components/Table.svelte';
+	import ConfigGroup from '$demo/components/ConfigGroup.svelte';
+	import SliderGroup from '$demo/components/SliderGroup.svelte';
+	import { playgroundStore } from '$demo/stores/playground.js';
 
 	// Sample titles for generation
 	const sampleTitles = [

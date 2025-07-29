@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Table from '$lib/components/Table.svelte';
-	import { articleHealer, userHealer } from '$lib/mock/healer.js';
+	import Table from '$demo/components/Table.svelte';
+	import { articleHealer, userHealer } from '$demo/mock/healer.js';
 
 	let { data } = $props();
 </script>

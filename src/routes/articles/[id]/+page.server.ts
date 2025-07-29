@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types.js';
-import { db } from '$lib/mock/db.js';
-import { articleHealer } from '$lib/mock/healer.js';
+import { db } from '$demo/mock/db.js';
+import { articleHealer } from '$demo/mock/healer.js';
 
 // ✨ NEW: Clean one-liner using handleRoute
 export const load: PageServerLoad = async ({ params, url }) => {
