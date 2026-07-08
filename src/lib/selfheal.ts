@@ -1,4 +1,4 @@
-import { HyphenIdentifierHandler, KebabSlugSanitizer, NamedComparator } from './defaults.js';
+import { HyphenIdentifierHandler, KebabSlugSanitizer, NamedComparator } from './defaults/index.js';
 import type {
   CanonicalRedirect,
   CollectHealResources,

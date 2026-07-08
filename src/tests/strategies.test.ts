@@ -1,8 +1,13 @@
 import {
+  CaseInsensitiveComparator,
   HyphenIdentifierHandler,
   KebabSlugSanitizer,
   NamedComparator,
-  selfheal
+  PassthroughSlugSanitizer,
+  selfheal,
+  SnakeSlugSanitizer,
+  TildeIdentifierHandler,
+  UnderscoreIdentifierHandler
 } from '$lib/index.js';
 import { healer } from './fixtures.js';
 import { describe, expect, it } from 'vitest';
@@ -44,20 +49,25 @@ describe('default healer URL building', () => {
 });
 
 describe('custom healer strategies', () => {
-  it('uses a custom identifier handler when configured', () => {
-    const custom = selfheal({
-      identifier: {
-        join: (slug, id) => `${slug}_${String(id)}`,
-        separate: (param) => {
-          const index = param.lastIndexOf('_');
-          if (index === -1) return { identifier: param, slug: '' };
-          return { identifier: param.slice(index + 1), slug: param.slice(0, index) };
-        }
-      }
-    });
+  it('uses UnderscoreIdentifierHandler when configured', () => {
+    const custom = selfheal({ identifier: UnderscoreIdentifierHandler });
 
     expect(custom.createUrl(7, 'My Post')).toBe('my-post_7');
     expect(custom.parseId('my-post_7')).toBe('7');
+  });
+
+  it('uses TildeIdentifierHandler for hyphenated UUIDs', () => {
+    const custom = selfheal({ identifier: TildeIdentifierHandler });
+    const uuid = '550e8400-e29b-41d4-a716-446655440000';
+
+    expect(custom.createUrl(uuid, 'My Post')).toBe(`my-post~${uuid}`);
+    expect(custom.parseId(`my-post~${uuid}`)).toBe(uuid);
+  });
+
+  it('uses CaseInsensitiveComparator when configured', () => {
+    const custom = selfheal({ isEqual: CaseInsensitiveComparator });
+
+    expect(custom.validate('My-Post-1', 'my-post-1')).toBe(true);
   });
 });
 
@@ -81,6 +91,19 @@ describe('KebabSlugSanitizer export', () => {
   });
 });
 
+describe('SnakeSlugSanitizer export', () => {
+  it('sanitizes to snake_case', () => {
+    expect(SnakeSlugSanitizer('Hello World!')).toBe('hello_world');
+    expect(SnakeSlugSanitizer('cliché café')).toBe('cliche_cafe');
+  });
+});
+
+describe('PassthroughSlugSanitizer export', () => {
+  it('trims without transforming the slug', () => {
+    expect(PassthroughSlugSanitizer('  Already-Clean  ')).toBe('Already-Clean');
+  });
+});
+
 describe('NamedComparator export', () => {
   it.each<{ left: string; right: string; matches: boolean }>([
     { left: 'any-given-slug-123', right: 'any-given-slug-123', matches: true },
@@ -88,6 +111,13 @@ describe('NamedComparator export', () => {
     { left: 'any-given-slug-123', right: 'any-given-slug-123?foo=bar', matches: false }
   ])('reports $left and $right as matching=$matches', ({ left, right, matches }) => {
     expect(NamedComparator(left, right)).toBe(matches);
+  });
+});
+
+describe('CaseInsensitiveComparator export', () => {
+  it('ignores casing differences', () => {
+    expect(CaseInsensitiveComparator('My-Post-1', 'my-post-1')).toBe(true);
+    expect(CaseInsensitiveComparator('My-Post-1', 'my-post-2')).toBe(false);
   });
 });
 
@@ -106,5 +136,26 @@ describe('HyphenIdentifierHandler export', () => {
   it('produces id-only params when the slug is empty', () => {
     expect(HyphenIdentifierHandler.join('', '123')).toBe('123');
     expect(HyphenIdentifierHandler.separate('123')).toEqual({ identifier: '123', slug: '' });
+  });
+});
+
+describe('UnderscoreIdentifierHandler export', () => {
+  it('joins slug and identifier with an underscore', () => {
+    expect(UnderscoreIdentifierHandler.join('my-post', 42)).toBe('my-post_42');
+    expect(UnderscoreIdentifierHandler.separate('my-post_42')).toEqual({
+      identifier: '42',
+      slug: 'my-post'
+    });
+  });
+});
+
+describe('TildeIdentifierHandler export', () => {
+  it('joins slug and identifier with a tilde', () => {
+    const uuid = '550e8400-e29b-41d4-a716-446655440000';
+    expect(TildeIdentifierHandler.join('my-post', uuid)).toBe(`my-post~${uuid}`);
+    expect(TildeIdentifierHandler.separate(`my-post~${uuid}`)).toEqual({
+      identifier: uuid,
+      slug: 'my-post'
+    });
   });
 });

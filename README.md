@@ -93,33 +93,38 @@ export const load = async ({ params, url }) => {
 - Search params are preserved across redirects.
 - No match → `notFound`, so you decide the `404`.
 
-Not supported out of the box: IDs that contain the separator character (`-` by
-default, e.g. hyphenated UUIDs). Swap in a custom identifier handler for those.
+Not supported with the default hyphen handler: IDs that contain `-` (e.g. UUIDs). Use
+`TildeIdentifierHandler` instead.
 
 ## Extend
 
-Override any strategy; omitted keys keep the defaults. Example using `_` instead of
-`-` as the separator (works for UUIDs):
+Override any strategy; omitted keys keep the defaults:
 
 ```ts
+import {
+  selfheal,
+  SnakeSlugSanitizer,
+  CaseInsensitiveComparator,
+  TildeIdentifierHandler
+} from 'svelte-selfheal';
+
 export const healer = selfheal({
-  identifier: {
-    join: (slug, id) => `${slug}_${id}`,
-    separate: (param) => {
-      const i = param.lastIndexOf('_');
-      return i === -1
-        ? { identifier: param, slug: '' }
-        : { identifier: param.slice(i + 1), slug: param.slice(0, i) };
-    }
-  }
+  sanitize: SnakeSlugSanitizer,
+  isEqual: CaseInsensitiveComparator,
+  identifier: TildeIdentifierHandler
 });
 ```
 
-| Default      | Behavior                                                         |
-| ------------ | ---------------------------------------------------------------- |
-| `sanitize`   | `KebabSlugSanitizer` — kebab-case, diacritic folding, trims junk |
-| `isEqual`    | `NamedComparator` — strict `===` on canonical vs actual          |
-| `identifier` | `HyphenIdentifierHandler` — `slug-id` join/split                 |
+| Export                        | Behavior                                |
+| ----------------------------- | --------------------------------------- |
+| `KebabSlugSanitizer`          | kebab-case, diacritic folding (default) |
+| `SnakeSlugSanitizer`          | snake_case                              |
+| `PassthroughSlugSanitizer`    | trim only — slug already normalized     |
+| `NamedComparator`             | strict `===` (default)                  |
+| `CaseInsensitiveComparator`   | ignore casing differences               |
+| `HyphenIdentifierHandler`     | `slug-id` (default)                     |
+| `UnderscoreIdentifierHandler` | `slug_id`                               |
+| `TildeIdentifierHandler`      | `slug~id` — safe for UUIDs              |
 
 ## Run locally
 
