@@ -1,17 +1,12 @@
-import { db } from '$lib/db.js';
-import { healer } from '$lib/selfheal.js';
+import { healArticle, healer } from '$demo/healer.js';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async ({ params, url }) => {
-	const identifier = healer.parseId(params.id);
+  const result = await healer.run(healArticle(params.id), url.searchParams);
+  if (result.notFound) error(404, 'Article not found');
+  if (result.redirect) redirect(301, result.redirect);
 
-	const article = db.articles.find((article) => String(article.id) === identifier);
-	if (!article) throw error(404, `Article "${identifier}" not found`);
-
-	const expectedUrl = healer.createUrl(article.id, article.title, url.searchParams);
-	const valid = healer.validate(expectedUrl, params.id, url.searchParams);
-	if (!valid) throw redirect(301, expectedUrl);
-
-	return { article, slug: params.id };
+  const [article] = result.resources;
+  return { article, slug: params.id };
 };

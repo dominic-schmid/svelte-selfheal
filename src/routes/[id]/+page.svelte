@@ -1,16 +1,19 @@
 <script lang="ts">
-	export let data;
+  import { resolve } from '$app/paths';
+  import type { PageData } from './$types.js';
+
+  let { data }: { data: PageData } = $props();
 </script>
 
-<a href="/">Home</a>
+<a href={resolve('/')}>Home</a>
 
 <h1>{data.slug}</h1>
 
 <pre>{JSON.stringify(data.article, null, 4)}</pre>
 
 <p>
-	You can change or remove the URL before the ID (<i>{data.article.id}</i>) and the page should
-	still load.
+  You can change or remove the URL before the ID (<i>{data.article.id}</i>) and the page should
+  still load.
 </p>
 
-<a href="{data.slug}/details/{data.article.id}">Go deeper</a>
+<a href={resolve(`/${data.slug}/details/${String(data.article.id)}`)}>Go deeper</a>

@@ -1,8 +1,8 @@
-import { db } from '$lib/db.js';
+import { articles } from '$demo/data.js';
 import type { PageLoad } from './$types.js';
 
-export const load = (async () => {
-	return {
-		articles: db.articles
-	};
+export const load = (() => {
+  return {
+    articles
+  };
 }) satisfies PageLoad;
