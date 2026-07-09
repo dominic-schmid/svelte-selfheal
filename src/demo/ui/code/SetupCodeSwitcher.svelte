@@ -11,42 +11,46 @@
   }
 
   let { healerSimpleHtml, healerNestedHtml, runLoadHtml, stackLoadHtml }: Props = $props();
-
-  let selectedSetup = $state('simple');
 </script>
 
-<div class="code-switcher" data-setup={selectedSetup}>
-  <div class="setup-tabs" role="tablist" aria-label="Choose a setup example">
+<div class="code-switcher">
+  <fieldset class="setup-tabs">
+    <legend class="sr-only">Choose a setup example</legend>
     {#each exampleTabs as tab (tab.id)}
-      <button
-        type="button"
-        role="tab"
-        id="setup-{tab.id}"
-        class="setup-tab"
-        aria-selected={selectedSetup === tab.id}
-        onclick={() => (selectedSetup = tab.id)}
-      >
+      {#if tab.id === 'simple'}
+        <input
+          type="radio"
+          name="setup"
+          id="setup-{tab.id}"
+          value={tab.id}
+          class="setup-input"
+          checked
+        />
+      {:else}
+        <input type="radio" name="setup" id="setup-{tab.id}" value={tab.id} class="setup-input" />
+      {/if}
+      <label for="setup-{tab.id}" class="setup-tab">
         <span class="setup-tab-label">{tab.label}</span>
         <span class="setup-tab-tagline">{tab.tagline}</span>
-      </button>
+      </label>
     {/each}
-  </div>
+  </fieldset>
 
   <div class="code-files">
     <div class="code-figure-slot code-figure-slot--lead">
-      <div class="code-variant" data-setup="simple" hidden={selectedSetup !== 'simple'}>
+      <div class="code-variant" data-setup="simple">
         <HighlightedCode html={healerSimpleHtml} filename={setupFilenames.healer} />
       </div>
-      <div class="code-variant" data-setup="nested" hidden={selectedSetup !== 'nested'}>
+      <div class="code-variant" data-setup="nested">
         <HighlightedCode html={healerNestedHtml} filename={setupFilenames.healer} />
       </div>
     </div>
 
     <div class="code-figure-slot code-figure-slot--trail">
-      <div class="code-variant" data-setup="simple" hidden={selectedSetup !== 'simple'}>
+      <div class="code-variant" data-setup="simple">
         <HighlightedCode html={runLoadHtml} filename={setupFilenames.runLoad} />
       </div>
-      <div class="code-variant" data-setup="nested" hidden={selectedSetup !== 'nested'}>
+      <div class="code-variant" data-setup="nested">
         <HighlightedCode html={stackLoadHtml} filename={setupFilenames.stackLoad} />
       </div>
     </div>

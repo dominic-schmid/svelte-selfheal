@@ -117,7 +117,9 @@
   button,
   [role='button'],
   button.install-tab,
-  button.setup-tab {
+  label.install-tab,
+  button.setup-tab,
+  label.setup-tab {
     touch-action: manipulation;
   }
 
@@ -205,6 +207,10 @@
     @apply m-0 flex shrink-0 items-stretch border-r border-border bg-card p-0;
   }
 
+  .install-input {
+    @apply sr-only;
+  }
+
   .install-tab {
     @apply flex items-center border-r border-border bg-transparent px-3 py-0 font-mono text-xs text-muted-foreground transition-[color,background-color] duration-150 last:border-r-0 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset;
     min-height: 2.75rem;
@@ -212,10 +218,10 @@
     text-box-edge: cap alphabetic;
   }
 
-  .install-cmd[data-pm='pnpm'] #pm-pnpm,
-  .install-cmd[data-pm='npm'] #pm-npm,
-  .install-cmd[data-pm='yarn'] #pm-yarn,
-  .install-cmd[data-pm='bun'] #pm-bun {
+  .install-cmd:has(#pm-pnpm:checked) .install-tab[for='pm-pnpm'],
+  .install-cmd:has(#pm-npm:checked) .install-tab[for='pm-npm'],
+  .install-cmd:has(#pm-yarn:checked) .install-tab[for='pm-yarn'],
+  .install-cmd:has(#pm-bun:checked) .install-tab[for='pm-bun'] {
     @apply bg-accent text-foreground;
   }
 
@@ -245,11 +251,14 @@
     @apply outline-none;
   }
 
-  .install-cmd .install-command-input[hidden] {
+  .install-cmd .install-command-input {
     @apply hidden;
   }
 
-  .install-cmd .install-command-input:not([hidden]) {
+  .install-cmd:has(#pm-pnpm:checked) .install-command-input[data-pm='pnpm'],
+  .install-cmd:has(#pm-npm:checked) .install-command-input[data-pm='npm'],
+  .install-cmd:has(#pm-yarn:checked) .install-command-input[data-pm='yarn'],
+  .install-cmd:has(#pm-bun:checked) .install-command-input[data-pm='bun'] {
     @apply block w-full;
   }
 
@@ -333,6 +342,10 @@
     @apply m-0 flex w-full items-stretch overflow-hidden rounded-t-lg border border-b-0 border-border bg-card p-0;
   }
 
+  .setup-input {
+    @apply sr-only;
+  }
+
   .setup-tab {
     @apply flex flex-1 cursor-pointer flex-col items-start border-r border-border bg-transparent px-4 py-2.5 text-left transition-[color,background-color] duration-150 last:border-r-0 hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset;
   }
@@ -347,13 +360,13 @@
     @apply mt-0.5 font-mono text-xs text-muted-foreground;
   }
 
-  .code-switcher[data-setup='simple'] #setup-simple,
-  .code-switcher[data-setup='nested'] #setup-nested {
+  .code-switcher:has(#setup-simple:checked) .setup-tab[for='setup-simple'],
+  .code-switcher:has(#setup-nested:checked) .setup-tab[for='setup-nested'] {
     @apply bg-accent;
   }
 
-  .code-switcher[data-setup='simple'] #setup-simple .setup-tab-tagline,
-  .code-switcher[data-setup='nested'] #setup-nested .setup-tab-tagline {
+  .code-switcher:has(#setup-simple:checked) .setup-tab[for='setup-simple'] .setup-tab-tagline,
+  .code-switcher:has(#setup-nested:checked) .setup-tab[for='setup-nested'] .setup-tab-tagline {
     @apply text-primary/90;
   }
 
@@ -409,8 +422,13 @@
     @apply mb-6 text-sm;
   }
 
-  .code-variant[hidden] {
+  .code-variant {
     @apply hidden;
+  }
+
+  .code-switcher:has(#setup-simple:checked) [data-setup='simple'],
+  .code-switcher:has(#setup-nested:checked) [data-setup='nested'] {
+    @apply block;
   }
 
   #setup,

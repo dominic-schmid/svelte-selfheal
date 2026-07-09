@@ -1,24 +1,19 @@
 <script lang="ts">
   import { packageManagers } from '$demo/install.js';
-
-  let selectedPm = $state(packageManagers[0]?.id ?? 'pnpm');
 </script>
 
-<div class="install-cmd" data-pm={selectedPm}>
-  <div class="install-tabs" role="tablist" aria-label="Package manager">
-    {#each packageManagers as pm (pm.id)}
-      <button
-        type="button"
-        role="tab"
-        id="pm-{pm.id}"
-        class="install-tab"
-        aria-selected={selectedPm === pm.id}
-        onclick={() => (selectedPm = pm.id)}
-      >
-        {pm.label}
-      </button>
+<div class="install-cmd">
+  <fieldset class="install-tabs">
+    <legend class="sr-only">Package manager</legend>
+    {#each packageManagers as pm, index (pm.id)}
+      {#if index === 0}
+        <input type="radio" name="pm" id="pm-{pm.id}" value={pm.id} class="install-input" checked />
+      {:else}
+        <input type="radio" name="pm" id="pm-{pm.id}" value={pm.id} class="install-input" />
+      {/if}
+      <label for="pm-{pm.id}" class="install-tab">{pm.label}</label>
     {/each}
-  </div>
+  </fieldset>
 
   <div class="install-command-field">
     <span class="install-prompt" aria-hidden="true">$</span>
@@ -34,7 +29,6 @@
         autocorrect="off"
         autocapitalize="off"
         aria-label="Install command for {pm.label}"
-        hidden={selectedPm !== pm.id}
       />
     {/each}
   </div>

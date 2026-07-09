@@ -15,7 +15,7 @@
         if (button) {
           const root = button.closest('.install-cmd');
           if (!root) return;
-          const pm = root.dataset.pm || root.querySelector('input[name=pm]:checked')?.value;
+          const pm = root.querySelector('input[name=pm]:checked')?.value;
           const input = pm && root.querySelector('.install-command-input[data-pm="' + pm + '"]');
           const command =
             input instanceof HTMLInputElement ? input.value : input?.textContent?.trim();
@@ -56,7 +56,7 @@
         if (!field) return;
         const root = field.closest('.install-cmd');
         if (!root) return;
-        const pm = root.dataset.pm || root.querySelector('input[name=pm]:checked')?.value;
+        const pm = root.querySelector('input[name=pm]:checked')?.value;
         const input = pm && root.querySelector('.install-command-input[data-pm="' + pm + '"]');
         if (input instanceof HTMLInputElement) {
           input.focus();
