@@ -1,39 +1,48 @@
 # Changelog
 
-All notable changes to this project are documented here.
-
-Format based on [Keep a Changelog](https://keepachangelog.com/). Versioning follows [SemVer](https://semver.org/).
+Format: [Keep a Changelog](https://keepachangelog.com/). Versions: [SemVer](https://semver.org/).
 
 ## [0.3.0] - 2026-07-09
 
+Heal layers replace `guard`. Define fetch + segment mapping once, call `run` or `stack` in
+`load`, get typed resources and a single redirect when the slug drifts. Demo site ships
+at [selfheal.js.org](https://selfheal.js.org) with copy-ready `examples/`.
+
 ### Breaking
 
-- **API:** Removed `guard` / `resolveGuard`. Use `run`, `stack`, or `canonicalRedirect` instead.
-- **API:** `canonicalRedirect` now takes an ordered segment array and returns an absolute path (or `null`), not a bare param string.
-- **API:** Added `layer`, `run`, and `stack` as the primary async flow. Each layer owns fetch + heal; `stack` heals every segment (including parent slugs on nested routes).
-- **API:** `stack` / `run` return a discriminated `StackResult` (`{ notFound: true }` | `{ notFound: false, redirect, resources }`) instead of `null` on fetch failure.
-- **Exports:** Demo `db` removed from the published package (`src/demo/` only). Consumers must supply their own fetch functions via `layer`.
-- **Exports:** Strategy modules reorganized under `defaults/` (same public names, new paths internally).
-- **Peer dependency:** Svelte `^5.0.0` required (was Svelte 4–compatible).
+- Removed `guard` / `resolveGuard` — use `run`, `stack`, or `canonicalRedirect`.
+- `canonicalRedirect` takes an ordered segment array; returns an absolute path or `null`.
+- `layer`, `run`, `stack` are the async entry points. Each layer owns fetch + heal;
+  `stack` corrects every segment, including parent slugs on nested routes.
+- `run` / `stack` return `StackResult` (`notFound` | `{ redirect, resources }`) instead of `null` on fetch miss.
+- Demo `db` is not published (`src/demo/` stays in-repo). Wire your own `fetch` via `layer`.
+- Strategy modules live under `defaults/` internally; public export names unchanged.
+- Peer dependency: Svelte `^5.0.0` (was Svelte 4–compatible).
 
 ### Added
 
-- `layer()` — reusable heal-layer factory (fetch + segment mapping).
-- `run()` — single-segment sugar over `stack`.
-- `stack()` — compose heal layers and static path segments with typed `resources`.
-- `SelfhealerOptions` — partial config (`Partial<SelfhealerConfig>`).
-- Default strategies: `SnakeSlugSanitizer`, `PassthroughSlugSanitizer`, `CaseInsensitiveComparator`, `UnderscoreIdentifierHandler`, `TildeIdentifierHandler`.
-- Behavior-focused test suite; demo migrated to Svelte 5 runes.
+- `layer()`, `run()`, `stack()` with typed `resources`.
+- `SelfhealerOptions` (`Partial<SelfhealerConfig>`).
+- Strategies: `SnakeSlugSanitizer`, `PassthroughSlugSanitizer`, `CaseInsensitiveComparator`, `UnderscoreIdentifierHandler`, `TildeIdentifierHandler`.
+- Prerendered demo: live 301/404 try links, setup code switcher, strategy catalog.
+- `examples/` — `single-segment-run`, `nested-stack`, `sync-canonical-redirect`.
+- GitHub Pages workflow; `PUBLIC_SITE_URL` for canonical and OG tags at build time.
+- `knip` dead-code check; `engines.node` `>=20`.
 
 ### Changed
 
 - Zero runtime dependencies (Svelte 5 peer only).
-- Tooling: ESLint flat config, stricter TypeScript, 2-space Prettier, pnpm-only.
-- README rewritten for the layer/run/stack model.
+- ESLint flat config, stricter TypeScript, Prettier 2-space; `examples/` excluded from lint/format.
+- Demo routes use shared shell and try-link sections; install/setup tabs are `role="tab"` buttons.
+- Copy button reads `data-pm` instead of `:has(:checked)` radio CSS.
+
+### Removed
+
+- `docs/` — release notes live in README and this file.
 
 ### Migration
 
-**Before (0.2.x-style load):**
+**Before (0.2.x):**
 
 ```ts
 const id = healer.parseId(params.id);
@@ -71,4 +80,4 @@ Define `healArticle` once with `healer.layer({ fetch, segment })` and reuse at a
 
 ## [0.2.x and earlier]
 
-See git history before the `feat!: restructure lib with layer/run/stack API and Svelte 5 demo` commit.
+See git history before `feat!: restructure lib with layer/run/stack API and Svelte 5 demo`.

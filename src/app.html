@@ -2,18 +2,76 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.png" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css"
-      integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls"
-      crossorigin="anonymous"
-    />
-
+    <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+    <meta name="theme-color" content="#000000" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     %sveltekit.head%
   </head>
-  <body data-sveltekit-preload-data="hover" style="padding: 2%">
+  <body>
     <div>%sveltekit.body%</div>
+    <script>
+      document.addEventListener('click', (event) => {
+        const button = event.target.closest('.install-copy');
+        if (button) {
+          const root = button.closest('.install-cmd');
+          if (!root) return;
+          const pm = root.dataset.pm || root.querySelector('input[name=pm]:checked')?.value;
+          const input = pm && root.querySelector('.install-command-input[data-pm="' + pm + '"]');
+          const command =
+            input instanceof HTMLInputElement ? input.value : input?.textContent?.trim();
+          if (!command) return;
+
+          button.blur();
+
+          const resetCopyButton = () => {
+            button.dataset.state = 'idle';
+            button.setAttribute('aria-label', 'Copy install command');
+            const status = document.getElementById('install-copy-status');
+            if (status) status.textContent = '';
+          };
+
+          if (button.dataset.state === 'copied') return;
+
+          navigator.clipboard.writeText(command).then(
+            () => {
+              const status = document.getElementById('install-copy-status');
+              const receipt = pm ? `Copied ${pm} install command` : 'Copied install command';
+              if (status) status.textContent = receipt;
+              button.dataset.state = 'copied';
+              button.setAttribute('aria-label', receipt);
+              window.setTimeout(resetCopyButton, 1800);
+            },
+            () => {
+              const status = document.getElementById('install-copy-status');
+              if (status) status.textContent = 'Copy failed — select the command and copy manually';
+              button.dataset.state = 'failed';
+              button.setAttribute('aria-label', 'Copy failed');
+              window.setTimeout(resetCopyButton, 2200);
+            }
+          );
+          return;
+        }
+
+        const field = event.target.closest('.install-command-field');
+        if (!field) return;
+        const root = field.closest('.install-cmd');
+        if (!root) return;
+        const pm = root.dataset.pm || root.querySelector('input[name=pm]:checked')?.value;
+        const input = pm && root.querySelector('.install-command-input[data-pm="' + pm + '"]');
+        if (input instanceof HTMLInputElement) {
+          input.focus();
+          input.select();
+        }
+      });
+
+      document.addEventListener('focusin', (event) => {
+        if (
+          event.target instanceof HTMLInputElement &&
+          event.target.classList.contains('install-command-input')
+        ) {
+          event.target.select();
+        }
+      });
+    </script>
   </body>
 </html>

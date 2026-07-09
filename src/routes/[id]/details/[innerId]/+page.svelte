@@ -1,23 +1,28 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
+  import DocsArticle from '$demo/ui/docs/DocsArticle.svelte';
+  import TryLinksSection from '$demo/ui/try/TryLinksSection.svelte';
+  import { canonicalDisplay, tryLinksFor } from '$demo/examples.js';
   import type { PageData } from './$types.js';
 
   let { data }: { data: PageData } = $props();
+
+  const tryLinks = $derived(tryLinksFor('nested'));
 </script>
 
-<a href={resolve('/')}>Home</a>
+<svelte:head>
+  <title>{data.author.name} — nested — svelte-selfheal</title>
+</svelte:head>
 
-<h1>Inner details of {data.slug}</h1>
+<DocsArticle back>
+  <h1>{data.author.name}</h1>
+  <p>
+    Author page via <code>stack()</code> — article <code>{data.article.title}</code> (ID
+    <code>{data.article.id}</code>), author ID <code>{data.author.id}</code>. Both slugs are
+    cosmetic.
+  </p>
+  <p class="text-sm text-muted-foreground">
+    Canonical path: <code>{canonicalDisplay('nested')}</code>
+  </p>
 
-<pre>{JSON.stringify(data.article, null, 4)}</pre>
-
-<p>
-  You can change or remove the URL before the ID (<i>{data.article.id}</i>) and the page should
-  still load.
-</p>
-<p>
-  Note, however, that changing the parent slug will not heal that part of the URL as there is
-  currently no clean way (that I know) to "listen" to that and invalidate it without checking on
-  every nested child request, which is likely wasted performance and sacrifices loading time for
-  little gains.
-</p>
+  <TryLinksSection title="Break the URL again" links={tryLinks} />
+</DocsArticle>

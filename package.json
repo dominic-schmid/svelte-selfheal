@@ -9,10 +9,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dominic-schmid/svelte-selfheal"
+    "url": "git+https://github.com/dominic-schmid/svelte-selfheal.git"
   },
   "engines": {
-    "node": "24.x"
+    "node": ">=20"
   },
   "scripts": {
     "dev": "vite dev",
@@ -25,6 +25,7 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "vitest",
     "lint": "prettier --check . && eslint .",
+    "knip": "knip",
     "format": "prettier --write ."
   },
   "exports": {
@@ -43,19 +44,23 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@sveltejs/adapter-auto": "^7.0.1",
+    "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.69.2",
     "@sveltejs/package": "^2.5.8",
     "@sveltejs/vite-plugin-svelte": "^7.2.0",
+    "@tailwindcss/vite": "^4.3.2",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-svelte": "^3.0.0",
     "globals": "^16.0.0",
+    "knip": "^6.25.0",
     "prettier": "^3.0.0",
     "prettier-plugin-svelte": "^4.1.1",
     "publint": "^0.3.21",
+    "shiki": "^4.3.1",
     "svelte": "^5.56.4",
     "svelte-check": "^4.7.2",
+    "tailwindcss": "^4.3.2",
     "tslib": "^2.4.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.63.0",

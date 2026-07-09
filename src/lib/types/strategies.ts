@@ -28,6 +28,7 @@ export type RouteComparator = (expectedValue: string, actualValue: string) => bo
 
 export interface SelfhealerConfig {
   sanitize: SlugSanitizer;
+  /** Canonical vs incoming param; defaults to strict `===`. */
   isEqual: RouteComparator;
   identifier: IdentifierHandler;
 }

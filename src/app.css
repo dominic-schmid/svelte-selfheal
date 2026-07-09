@@ -1,0 +1,766 @@
+@import 'tailwindcss';
+
+/* shadcn-style tokens — mostly black, one primary, neutral accent */
+:root {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 98%;
+
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 98%;
+
+  --popover: 0 0% 5%;
+  --popover-foreground: 0 0% 98%;
+
+  --primary: 211 100% 65%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 0 0% 9%;
+  --secondary-foreground: 0 0% 98%;
+
+  --muted: 0 0% 9%;
+  --muted-foreground: 0 0% 56%;
+
+  --accent: 0 0% 11%;
+  --accent-foreground: 0 0% 98%;
+
+  --border: 0 0% 16%;
+  --input: 0 0% 16%;
+  --ring: 211 100% 65%;
+
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Monaco, Consolas,
+    'Liberation Mono', monospace;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    overflow-x: clip;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html:has(:target) {
+      scroll-behavior: smooth;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: hsl(var(--primary) / 0.12);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: hsl(var(--border));
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  :target {
+    scroll-margin-top: 5rem;
+  }
+
+  a,
+  button,
+  [role='button'],
+  button.install-tab,
+  button.setup-tab {
+    touch-action: manipulation;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+  }
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-3xl px-4 sm:px-8;
+  }
+
+  .docs {
+    @apply w-full;
+  }
+
+  .docs h1 {
+    @apply mb-2 text-2xl font-semibold tracking-tight text-balance text-foreground sm:text-3xl;
+  }
+
+  .docs h2 {
+    @apply mt-0 mb-2 text-lg font-medium text-pretty text-foreground;
+  }
+
+  .docs-hero {
+    @apply relative mb-8 sm:mb-10;
+  }
+
+  .docs-kicker {
+    @apply mb-2 flex items-center gap-2 font-mono text-xs text-muted-foreground;
+  }
+
+  /* Absolute to hero — scrolls away; wrapper filter dims full-strength logo. */
+  .hero-mark {
+    position: absolute;
+    top: 0;
+    right: -2rem;
+    width: clamp(11rem, 14vw, 17rem);
+    filter: opacity(0.24);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .hero-mark-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .hero-mark-link {
+    stroke: hsl(var(--foreground));
+  }
+
+  .hero-mark-loop {
+    stroke: #ff3e00;
+  }
+
+  .hero-mark-head {
+    fill: #ff3e00;
+  }
+
+  @media (max-width: 40rem) {
+    .hero-mark {
+      display: none;
+    }
+  }
+
+  .docs-kicker {
+    @apply mb-2 flex items-center gap-2 font-mono text-xs text-muted-foreground;
+  }
+
+  .docs-version {
+    @apply rounded-sm border border-border bg-card px-1.5 py-0.5 font-mono text-primary;
+    font-variant-numeric: tabular-nums;
+    text-box-trim: trim-both;
+    text-box-edge: cap alphabetic;
+  }
+
+  .install-cmd {
+    @apply mt-0 flex min-w-0 items-stretch gap-0 overflow-hidden rounded-lg border border-border bg-card;
+  }
+
+  .install-tabs {
+    @apply m-0 flex shrink-0 items-stretch border-r border-border bg-card p-0;
+  }
+
+  .install-tab {
+    @apply flex items-center border-r border-border bg-transparent px-3 py-0 font-mono text-xs text-muted-foreground transition-[color,background-color] duration-150 last:border-r-0 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset;
+    min-height: 2.75rem;
+    text-box-trim: trim-both;
+    text-box-edge: cap alphabetic;
+  }
+
+  .install-cmd[data-pm='pnpm'] #pm-pnpm,
+  .install-cmd[data-pm='npm'] #pm-npm,
+  .install-cmd[data-pm='yarn'] #pm-yarn,
+  .install-cmd[data-pm='bun'] #pm-bun {
+    @apply bg-accent text-foreground;
+  }
+
+  .install-command-field {
+    @apply relative flex min-w-0 flex-1 cursor-text items-center gap-2.5 self-stretch border-x border-border/50 bg-background px-3.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[box-shadow,background-color,border-color] duration-150;
+    min-height: 2.75rem;
+  }
+
+  .install-command-field:focus-within {
+    @apply border-x-border bg-background shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)] ring-2 ring-ring/30 ring-inset;
+  }
+
+  .install-prompt {
+    @apply shrink-0 font-mono text-sm font-medium text-primary/80 select-none;
+  }
+
+  .install-command-input {
+    @apply min-w-0 flex-1 cursor-text border-0 bg-transparent py-0 font-mono text-[0.8125rem] leading-6 text-foreground outline-none;
+    caret-color: hsl(var(--primary));
+  }
+
+  .install-command-input::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+
+  .install-command-input:focus-visible {
+    @apply outline-none;
+  }
+
+  .install-cmd .install-command-input[hidden] {
+    @apply hidden;
+  }
+
+  .install-cmd .install-command-input:not([hidden]) {
+    @apply block w-full;
+  }
+
+  .install-copy {
+    @apply relative inline-flex shrink-0 items-center justify-center border-l border-border bg-card text-muted-foreground transition-[color,background-color] duration-150 hover:bg-accent hover:text-foreground focus:outline-none focus-visible:bg-accent focus-visible:text-foreground;
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  .install-copy:disabled {
+    @apply opacity-100;
+  }
+
+  .install-copy[data-state='copied'] {
+    @apply bg-accent text-primary;
+  }
+
+  .install-copy[data-state='failed'] {
+    @apply bg-card text-muted-foreground;
+  }
+
+  .install-copy-icon {
+    @apply size-4 shrink-0 overflow-visible;
+  }
+
+  .install-copy-glyph {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition:
+      opacity 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .install-copy-glyph--idle {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  .install-copy-glyph--done {
+    opacity: 0;
+    transform: scale(0.55) rotate(-12deg);
+  }
+
+  .install-copy[data-state='copied'] .install-copy-glyph--idle {
+    opacity: 0;
+    transform: scale(0.65) rotate(10deg);
+  }
+
+  .install-copy[data-state='copied'] .install-copy-glyph--done {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  .install-copy-check {
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+  }
+
+  .install-copy[data-state='copied'] .install-copy-check {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 280ms cubic-bezier(0.4, 0, 0.2, 1) 80ms;
+  }
+
+  .install-copy[data-state='idle'] .install-copy-check {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .install-copy,
+    .install-copy-glyph,
+    .install-copy-check {
+      transition: none;
+    }
+  }
+
+  .code-switcher {
+    @apply mt-4 space-y-0;
+  }
+
+  .setup-tabs {
+    @apply m-0 flex w-full items-stretch overflow-hidden rounded-t-lg border border-b-0 border-border bg-card p-0;
+  }
+
+  .setup-tab {
+    @apply flex flex-1 cursor-pointer flex-col items-start border-r border-border bg-transparent px-4 py-2.5 text-left transition-[color,background-color] duration-150 last:border-r-0 hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset;
+  }
+
+  .setup-tab-label {
+    @apply text-sm font-medium text-foreground;
+    text-box-trim: trim-both;
+    text-box-edge: cap alphabetic;
+  }
+
+  .setup-tab-tagline {
+    @apply mt-0.5 font-mono text-xs text-muted-foreground;
+  }
+
+  .code-switcher[data-setup='simple'] #setup-simple,
+  .code-switcher[data-setup='nested'] #setup-nested {
+    @apply bg-accent;
+  }
+
+  .code-switcher[data-setup='simple'] #setup-simple .setup-tab-tagline,
+  .code-switcher[data-setup='nested'] #setup-nested .setup-tab-tagline {
+    @apply text-primary/90;
+  }
+
+  .code-switcher .code-files .code-figure-slot--lead .code-filename {
+    @apply rounded-none border-x border-t-0;
+  }
+
+  .code-switcher .code-files .code-figure-slot--lead .code-block {
+    @apply rounded-none border-x border-t-0 border-b-0;
+  }
+
+  .code-switcher .code-files .code-figure-slot--trail .code-filename {
+    @apply rounded-none border-x border-t-0;
+  }
+
+  .code-switcher .code-files .code-figure-slot--trail .code-block {
+    @apply rounded-t-none rounded-b-lg border-x border-b;
+  }
+
+  .code-figure {
+    @apply m-0;
+  }
+
+  .code-filename {
+    @apply overflow-hidden rounded-t-lg border border-b-0 border-border bg-card px-3 py-2 font-mono text-xs text-muted-foreground;
+    direction: rtl;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .code-figure .code-block {
+    @apply rounded-t-none;
+  }
+
+  .docs-section {
+    @apply mt-10 space-y-4 sm:mt-12;
+  }
+
+  .docs-section > h2 + * {
+    @apply mt-2;
+  }
+
+  .docs-section > h2 + p {
+    @apply mb-5 sm:mb-6;
+  }
+
+  .docs-section + .docs-section {
+    @apply mt-10;
+  }
+
+  .docs-back {
+    @apply mb-6 text-sm;
+  }
+
+  .code-variant[hidden] {
+    @apply hidden;
+  }
+
+  #setup,
+  #how,
+  #inspiration {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 28rem;
+  }
+
+  #customize {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 22rem;
+  }
+
+  .setup-examples-foot {
+    @apply mt-4 text-sm;
+  }
+
+  .how-illustration {
+    @apply overflow-x-auto overscroll-x-contain rounded-lg border border-border bg-card p-4;
+  }
+
+  .how-illustration svg {
+    @apply h-auto w-full min-w-[34rem];
+  }
+
+  .how-illustration-caption {
+    @apply mt-3 text-sm text-muted-foreground;
+  }
+
+  .how-illustration-caption strong {
+    @apply font-medium text-primary;
+  }
+
+  .video-poster {
+    @apply relative block aspect-video w-full overflow-hidden rounded-lg border border-border bg-card transition-[border-color] duration-150 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .video-poster-image {
+    @apply h-full w-full object-cover;
+  }
+
+  .video-poster-play {
+    @apply absolute left-1/2 top-1/2 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/70;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E");
+    background-position: 58% center;
+    background-repeat: no-repeat;
+    background-size: 1.5rem;
+  }
+
+  .video-poster-label {
+    @apply absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-4 py-3 text-sm text-foreground;
+  }
+
+  .inspiration-note {
+    @apply text-pretty text-sm italic leading-relaxed text-muted-foreground;
+  }
+
+  .strategy-catalog {
+    @apply mt-6 overflow-hidden rounded-lg border border-border;
+  }
+
+  .strategy-block + .strategy-block {
+    @apply border-t border-border;
+  }
+
+  .strategy-caption {
+    @apply flex flex-col gap-1.5 border-b border-border bg-card px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6;
+  }
+
+  .strategy-caption-title {
+    @apply shrink-0 text-sm font-medium text-foreground;
+  }
+
+  .strategy-caption-hook {
+    @apply min-w-0 font-mono text-xs leading-relaxed text-muted-foreground;
+  }
+
+  .strategy-caption-hook code {
+    @apply bg-transparent p-0 text-[0.95em];
+  }
+
+  .strategy-rows {
+    @apply list-none divide-y divide-border/50 pl-0;
+  }
+
+  .strategy-row {
+    @apply flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6;
+  }
+
+  .strategy-row-name {
+    @apply shrink-0 bg-transparent p-0 font-mono text-xs text-foreground;
+  }
+
+  .strategy-row-example {
+    @apply min-w-0 font-mono text-xs text-muted-foreground sm:text-right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .strategy-foot {
+    @apply flex flex-col gap-2.5 border-t border-border/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4;
+  }
+
+  .strategy-foot-note {
+    @apply min-w-0 text-xs leading-relaxed text-muted-foreground;
+  }
+
+  .strategy-foot-link {
+    @apply shrink-0 font-mono text-xs;
+  }
+
+  .github-link:not(.github-link--icon-only) {
+    @apply text-muted-foreground no-underline transition-[color] duration-150 hover:text-primary;
+  }
+
+  .github-link {
+    @apply inline-flex items-center gap-1.5;
+  }
+
+  .github-link--icon-only {
+    @apply justify-center;
+  }
+
+  .github-link-label {
+    @apply min-w-0 underline-offset-4;
+  }
+
+  .github-link:not(.github-link--icon-only):hover .github-link-label {
+    @apply underline;
+  }
+
+  .github-link-icon {
+    @apply size-3.5 shrink-0 opacity-80;
+  }
+
+  .github-link:hover .github-link-icon {
+    @apply opacity-100;
+  }
+
+  .site-footer {
+    @apply border-t border-border bg-card/80;
+  }
+
+  .site-footer-inner {
+    @apply flex flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .site-footer-brand {
+    @apply inline-flex min-w-0 items-center gap-2.5 rounded-md;
+  }
+
+  .site-footer-end {
+    @apply flex flex-col gap-2 sm:items-end;
+  }
+
+  .site-footer-nav {
+    @apply flex flex-wrap items-center gap-3;
+  }
+
+  .site-footer-link {
+    @apply font-mono text-xs text-muted-foreground underline-offset-4 transition-[color] duration-150 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card;
+  }
+
+  .icon-link {
+    @apply relative inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-[color,background-color] duration-150 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card;
+  }
+
+  .icon-link::after {
+    content: '';
+    position: absolute;
+    inset: -0.25rem;
+  }
+
+  .header-actions {
+    @apply flex items-center gap-0.5;
+  }
+
+  .header-text-link {
+    @apply ml-1 rounded-md px-2 py-1.5 font-mono text-xs text-muted-foreground transition-[color,background-color] duration-150 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card;
+  }
+
+  .site-footer-credit {
+    @apply m-0 text-xs text-muted-foreground;
+  }
+
+  .site-footer-author {
+    @apply text-foreground underline-offset-4 transition-[color] duration-150 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card;
+  }
+
+  .illustration-label {
+    @apply mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground;
+  }
+
+  .code-block {
+    @apply overflow-x-auto overscroll-x-none rounded-lg border border-border bg-muted p-4 font-mono text-[13px] leading-normal;
+  }
+
+  .try-list {
+    @apply list-none space-y-2 pl-0;
+  }
+
+  .docs p {
+    @apply text-muted-foreground leading-relaxed;
+  }
+
+  .docs .lead {
+    @apply mb-6 text-base text-muted-foreground sm:mb-7 sm:text-lg;
+  }
+
+  .docs a:not(.try-link):not(.github-link) {
+    @apply text-muted-foreground underline-offset-4 transition-[color] duration-150 hover:text-primary hover:underline;
+  }
+
+  .docs ul {
+    @apply list-none pl-0;
+  }
+
+  .docs code {
+    @apply rounded-sm bg-muted px-1 py-0.5 font-mono text-[0.9em] text-foreground;
+  }
+
+  .docs .try-link {
+    @apply flex min-w-0 flex-wrap items-center justify-between gap-x-3 rounded-md border border-border bg-card px-3 py-2.5 font-mono text-sm text-foreground no-underline;
+  }
+
+  .docs .try-link:hover {
+    @apply no-underline;
+  }
+
+  .docs .try-link:hover .try-link-path {
+    @apply text-primary underline;
+  }
+
+  .docs .try-link:hover .try-badge--canonical {
+    @apply border-border bg-muted text-muted-foreground;
+  }
+
+  .docs .try-link:hover .try-badge--301 {
+    @apply border-primary/35 bg-secondary text-primary;
+  }
+
+  .docs .try-link:hover .try-badge--404 {
+    @apply border-red-500/35 bg-secondary text-red-400;
+  }
+
+  .docs .try-link--ok {
+    @apply border-border text-muted-foreground;
+  }
+
+  .try-link-path {
+    @apply min-w-0 flex-1 break-all;
+  }
+
+  .try-badge {
+    @apply shrink-0 rounded-sm border px-1.5 py-0.5 font-sans text-[10px] font-medium uppercase tracking-wide;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .try-badge--canonical {
+    @apply border-border bg-muted text-muted-foreground;
+  }
+
+  .try-badge--301 {
+    @apply border-primary/35 bg-secondary text-primary;
+  }
+
+  .try-badge--404 {
+    @apply border-red-500/35 bg-secondary text-red-400;
+  }
+
+  .docs p .try-badge {
+    @apply mx-0.5 inline-flex align-middle;
+  }
+
+  .sr-only {
+    @apply absolute -m-px h-px w-px overflow-hidden whitespace-nowrap border-0 p-0;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  @media (max-width: 40rem) {
+    .docs-hero {
+      @apply mb-6;
+    }
+
+    .docs-section {
+      @apply mt-8;
+    }
+
+    .install-cmd {
+      @apply flex-wrap;
+    }
+
+    .install-tabs {
+      @apply w-full border-r-0 border-b border-border;
+    }
+
+    .install-tab {
+      @apply flex-1 justify-center px-2;
+    }
+
+    .install-command-field {
+      @apply min-w-0 flex-1 border-l-0 px-3;
+    }
+
+    .install-command-input {
+      @apply text-xs leading-5;
+    }
+
+    .setup-tab {
+      @apply px-3 py-2;
+    }
+
+    .setup-tab-label {
+      @apply text-xs;
+    }
+
+    .setup-tab-tagline {
+      @apply text-[0.6875rem];
+    }
+
+    .code-filename {
+      @apply text-[0.6875rem];
+    }
+
+    .code-block {
+      @apply p-3 text-xs;
+    }
+
+    .how-illustration {
+      @apply p-3;
+    }
+
+    .video-poster-label {
+      @apply px-3 py-2 text-xs;
+    }
+
+    .docs .try-link {
+      @apply gap-y-2 py-3;
+    }
+
+    .try-badge {
+      @apply ml-auto;
+    }
+
+    .strategy-row-example {
+      @apply break-words;
+    }
+
+    .setup-examples-foot {
+      @apply text-xs;
+    }
+  }
+}

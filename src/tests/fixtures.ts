@@ -7,7 +7,7 @@ export const articles = [
   { id: 4, title: 'Why did the chicken cross the road?? And more!' }
 ] as const;
 
-export const getArticle = (id: string) =>
+const getArticle = (id: string) =>
   Promise.resolve(articles.find((article) => String(article.id) === id));
 
 export const healer = selfheal();

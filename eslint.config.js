@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['build/**', 'dist/**', '.svelte-kit/**', 'node_modules/**']
+    ignores: ['build/**', 'dist/**', '.svelte-kit/**', 'node_modules/**', 'examples/**']
   },
   {
     linterOptions: {

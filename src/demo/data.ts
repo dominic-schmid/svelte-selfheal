@@ -3,27 +3,24 @@ export interface Article {
   title: string;
 }
 
-/** Mock articles for the demo site. */
-export const articles: Article[] = [
+export interface Author {
+  id: number;
+  name: string;
+}
+
+/** Mock article for the demo site. */
+const articles: Article[] = [
   {
     id: 1,
     title: 'The article title'
-  },
+  }
+];
+
+/** Mock author — second entity type for the nested stack() demo. */
+const authors: Author[] = [
   {
     id: 2,
-    title: 'Another article'
-  },
-  {
-    id: 3,
-    title: 'third'
-  },
-  {
-    id: 123,
-    title: ''
-  },
-  {
-    id: 4,
-    title: 'Why did the chicken cross the road?? And more!'
+    name: 'Jane Doe'
   }
 ];
 
@@ -33,3 +30,10 @@ export const articles: Article[] = [
  */
 export const getArticle = (id: string): Promise<Article | undefined> =>
   Promise.resolve(articles.find((article) => String(article.id) === id));
+
+/**
+ * Simulates an async author lookup for nested route demos.
+ * Returns `undefined` when no author matches the identifier.
+ */
+export const getAuthor = (id: string): Promise<Author | undefined> =>
+  Promise.resolve(authors.find((author) => String(author.id) === id));

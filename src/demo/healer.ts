@@ -1,5 +1,5 @@
-import { getArticle } from './data.js';
-import type { Article } from './data.js';
+import { getArticle, getAuthor } from './data.js';
+import type { Article, Author } from './data.js';
 import { selfheal } from '$lib/index.js';
 
 export const healer = selfheal();
@@ -8,4 +8,10 @@ export const healer = selfheal();
 export const healArticle = healer.layer<Article>({
   fetch: getArticle,
   segment: (article) => ({ identifier: article.id, slug: article.title })
+});
+
+/** Reusable heal layer for author route params in nested demos. */
+export const healAuthor = healer.layer<Author>({
+  fetch: getAuthor,
+  segment: (author) => ({ identifier: author.id, slug: author.name })
 });
