@@ -88,6 +88,20 @@ export const load = async ({ params, url }) => {
 - Query strings carry over on redirect.
 - Fetch miss → `notFound: true`; you call `error(404)`.
 
+### Deploying
+
+`redirect(301)` in `load` runs on the **server**. Use an adapter that executes server
+`load` at request time — `adapter-vercel`, `adapter-node`, `adapter-cloudflare`, and
+similar.
+
+`adapter-static` with full prerender is a poor fit for self-healing URLs: build output
+cannot emit real HTTP 301s. Prerender only bakes client-side redirect stubs for paths you
+enumerate ahead of time. Canonical pages and marketing sites without dynamic slug healing
+are fine on static; arbitrary wrong URLs are not.
+
+This repo's demo uses `@sveltejs/adapter-vercel` on Vercel so try links show real `301`
+responses.
+
 Default hyphen IDs cannot contain `-` (e.g. UUIDs). Use `TildeIdentifierHandler` for those.
 
 ## Customize
@@ -131,27 +145,33 @@ pnpm test
 pnpm check
 pnpm lint
 pnpm knip
-pnpm build        # static demo output in build/
+pnpm build        # production build (demo deploys to Vercel)
 pnpm package      # dist/ for npm
 ```
 
-Set `PUBLIC_SITE_URL` (no trailing slash) when building the demo — canonical URLs and Open Graph tags depend on it. CI sets `https://selfheal.js.org`.
+Set `PUBLIC_SITE_URL` (no trailing slash) in your deployment environment — canonical URLs
+and Open Graph tags read it at runtime. On Vercel, add it under Project → Settings →
+Environment Variables.
 
 ```bash
-PUBLIC_SITE_URL=https://selfheal.js.org pnpm build
+PUBLIC_SITE_URL=https://your-project.vercel.app pnpm dev
 ```
 
-### Deploy the demo to `selfheal.js.org`
+### Deploy the demo
 
-1. **GitHub Pages** → Settings → Pages → Source: **GitHub Actions**. The `pages.yml` workflow builds `build/` on every push to `main`.
-2. **Custom domain** → Settings → Pages → `selfheal.js.org` (required with Actions deploys; a `CNAME` file alone is not enough).
-3. **js.org subdomain** → open a PR to [js-org/js.org](https://github.com/js-org/js.org) adding to [`cnames_active.js`](https://github.com/js-org/js.org/blob/master/cnames_active.js) (alphabetically, after `"selectric"`):
+The demo deploys to **Vercel** with `@sveltejs/adapter-vercel`. Connect the GitHub repo;
+Vercel detects SvelteKit automatically. Set `PUBLIC_SITE_URL` to your production origin
+(e.g. `https://selfheal.js.org` once the custom domain is wired).
 
-   ```js
-   "selfheal": "dominic-schmid.github.io/svelte-selfheal",
-   ```
+**Optional — `selfheal.js.org` via js.org:** point the subdomain at your Vercel deployment
+in [`cnames_active.js`](https://github.com/js-org/js.org/blob/master/cnames_active.js)
+(alphabetically, after `"selectric"`):
 
-   Link the live demo in the PR body. The subdomain usually resolves within a day of merge.
+```js
+"selfheal": "your-project.vercel.app",
+```
+
+Then add `selfheal.js.org` as a custom domain in the Vercel project.
 
 Demo load functions: [`src/routes/[id]/+page.server.ts`](src/routes/[id]/+page.server.ts),
 [`src/routes/[id]/details/[innerId]/+page.server.ts`](src/routes/[id]/details/[innerId]/+page.server.ts).

@@ -26,7 +26,7 @@ at [selfheal.js.org](https://selfheal.js.org) with copy-ready `examples/`.
 - Strategies: `SnakeSlugSanitizer`, `PassthroughSlugSanitizer`, `CaseInsensitiveComparator`, `UnderscoreIdentifierHandler`, `TildeIdentifierHandler`.
 - Prerendered demo: live 301/404 try links, setup code switcher, strategy catalog.
 - `examples/` — `single-segment-run`, `nested-stack`, `sync-canonical-redirect`.
-- GitHub Pages workflow; `PUBLIC_SITE_URL` for canonical and OG tags at build time.
+- Demo deploys to Vercel (`@sveltejs/adapter-vercel`); `PUBLIC_SITE_URL` for canonical and OG tags.
 - `knip` dead-code check; `engines.node` `>=20`.
 
 ### Changed

@@ -6,8 +6,7 @@ export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
   server: {
     watch: {
-      // adapter-static writes here; watching it triggers full page reloads during dev
-      ignored: ['**/build/**', '**/dist/**']
+      ignored: ['**/dist/**', '**/.vercel/**']
     }
   },
   test: {

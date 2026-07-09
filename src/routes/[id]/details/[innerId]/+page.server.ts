@@ -1,9 +1,6 @@
-import { nestedRouteEntries } from '$demo/prerender.js';
 import { healArticle, healAuthor, healer } from '$demo/healer.js';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types.js';
-
-export const entries = () => nestedRouteEntries();
 
 export const load: PageServerLoad = async ({ params }) => {
   const result = await healer.stack(
