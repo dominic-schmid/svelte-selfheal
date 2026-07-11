@@ -1,0 +1,8 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": ["examples/**", ".vercel/**", "build/**"],
+  "ignoreDependencies": ["tslib"],
+  "vitest": {
+    "entry": ["src/tests/**/*.test.ts"]
+  }
+}

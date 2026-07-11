@@ -3,9 +3,13 @@ node_modules
 /build
 /.svelte-kit
 /package
+/dist
 .env
 .env.*
 !.env.example
+
+# Copy-ready trees — not part of the demo app; aliases differ per layout
+examples/
 
 # Ignore files for PNPM, NPM and YARN
 pnpm-lock.yaml

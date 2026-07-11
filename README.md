@@ -1,170 +1,179 @@
 # svelte-selfheal
 
-A simple Svelte package inspired by [this video from Aaron Francis](https://www.youtube.com/watch?v=a6lnfyES-LA) and heavily based on [a similar package for Laravel](https://github.com/lukeraymonddowning/self-healing-urls).
+**[Live demo](https://selfheal.js.org)** · [npm](https://www.npmjs.com/package/svelte-selfheal) · [GitHub](https://github.com/dominic-schmid/svelte-selfheal)
 
-It allows you to redirect users to a canonical and SEO-friendly URL for a page, even if the slug is altered at any point or doesn't exist at all.
+Self-healing URLs for SvelteKit. A route like `/blog/my-fancy-title-5312` looks right in
+search results; your load still fetches article `5312`. Break the slug and the library
+sends a `301` to the canonical path — as long as the ID is still in the URL.
+
+Inspired by [Aaron Francis](https://www.youtube.com/watch?v=a6lnfyES-LA) and
+[Laravel self-healing URLs](https://github.com/lukeraymonddowning/self-healing-urls).
 
 ![svelte-selfheal-gif](./static/svelte-selfheal.gif)
 
-### Example
+Canonical: `/blog/my-fancy-title-5312`. These all redirect to it:
 
-Canonical URL: `https://my-app.com/blog/my-fancy-title-5312`
-
-The following URLs would still redirect to the correct page
-
-- `/blog/my-fancy-title-5312` _(original)_
 - `/blog/my-fancy-but-spelled-wrong-title-5312`
 - `/blog/5312`
 - `/blog/-5312`
 - `/blog/THIS should NOT be r3alURL   -5312`
 
-## Installation
+Titles change. Links get shared with typos. URLs get truncated. The ID stays stable; the
+slug does not. Zero runtime dependencies — Svelte 5 peer only. The library never imports
+SvelteKit; you call `error()` and `redirect()` in your own `load` functions.
 
-Install this package using any of the popular package managers.
+## Install
 
-```
-npm i svelte-selfheal
-```
-
-```
+```bash
 pnpm add svelte-selfheal
 ```
 
-```
-yarn add svelte-selfheal
-```
+## Use
 
-## Usage
-
-Once installed, export a healer:
+Define a healer and a heal layer once (e.g. `$lib/healer.ts`):
 
 ```ts
 import { selfheal } from 'svelte-selfheal';
+import { getArticle } from '$lib/db.js';
+import type { Article } from '$lib/db.js';
 
 export const healer = selfheal();
+
+export const healArticle = healer.layer<Article>({
+  fetch: getArticle,
+  segment: (article) => ({ identifier: article.id, slug: article.title })
+});
 ```
 
-Now you can use the self-healing functions anywhere across your app.
-
-### Example +page.server.ts
-
-Inside your load function you want to
-
-1. Separate the identifier from the slug using the handler you defined on creation
+**Single segment** (`/[id]`) — `run` parses the param, fetches the row, compares the slug:
 
 ```ts
-const identifier = healer.parseId(params.id);
-```
-
-2. Query the database using the ID and see if something is found
-
-```ts
-const article = db.articles.find((article) => String(article.id) === identifier);
-if (!article) throw error(404, `Article "${identifier}" not found`);
-```
-
-1. Create the slug using the DB values and compare it to the actual URL, then redirect if needed
-
-```ts
-const expectedUrl = healer.createUrl(article.id, article.title, url.searchParams);
-const valid = healer.validate(expectedUrl, params.id, url.searchParams);
-if (!valid) throw redirect(301, expectedUrl);
-```
-
-Now you are guaranteed to either be on the `404` page because no entity with that ID is found or you have been redirected to the correct, canonical slug for this entity.
-
-### Complete example
-
-```ts
-import { db } from '$lib/db.js';
-import { healer } from '$lib/selfheal.js';
+import { healArticle, healer } from '$lib/healer.js';
 import { error, redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types.js';
 
-export const load: PageServerLoad = async ({ params, url }) => {
-	const identifier = healer.parseId(params.id);
+export const load = async ({ params, url }) => {
+  const result = await healer.run(healArticle(params.id), url.searchParams);
+  if (result.notFound) error(404, 'Article not found');
+  if (result.redirect) redirect(301, result.redirect);
 
-	const article = db.articles.find((article) => String(article.id) === identifier);
-	if (!article) throw error(404, `Article "${identifier}" not found`);
-
-	const expectedUrl = healer.createUrl(article.id, article.title, url.searchParams);
-	const valid = healer.validate(expectedUrl, params.id, url.searchParams);
-	if (!valid) throw redirect(301, expectedUrl);
-
-	return { article, slug: params.id };
+  const [article] = result.resources;
+  return { article };
 };
 ```
 
-Don't worry if your "slug" isn't URL friendly; the package will take care of
-formatting it for you whenever you call `createUrl()`. In fact, it doesn't even have to be unique because the
-defined unique identifier for your model will also be included at the end.
-If some entities have no article, you can just provide an empty string and the IDs will work as if there were no self-healing going on.
-
-## Limitations
-
-By default, the package requires that your unique identifier (such as the `id` or `uuid` column)
-not have any `-` characters. However, you can implement your own `IdentifierHandler` as detailed in the next section and override how IDs are joined and separated.
-
-## Configuration
-
-During initialization you can configure the `healer` by passing in functions to handle its operations, or use its sensible defaults.
-
-By default, the package uses
-
-| Function                      | Method | Description                                                                                                                                 |
-| ----------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| sanitize()                    | Kebab  | Trims, replaces spaces with hyphens, removes multiple hyphens, removes hyphens at the start and end of the string and converts to lowercase |
-| isEqual() | Name   | Compares the canonical and current routes by their names using a simple `===`                                                               |
-| identifier()                  | Hyphen | Appends the ID to the slug using a hyphen `-`                                                                                               |
-
-You can however change any of these individually, within the limitations mentioned above.
+**Nested segments** (`/[id]/details/[innerId]`) — `stack` heals every layer in one redirect,
+including a wrong parent slug:
 
 ```ts
+import { healArticle, healer } from '$lib/healer.js';
+import { error, redirect } from '@sveltejs/kit';
+
+export const load = async ({ params, url }) => {
+  const result = await healer.stack(
+    [healArticle(params.id), 'details', healArticle(params.innerId)],
+    url.searchParams
+  );
+  if (result.notFound) error(404, 'Article not found');
+  if (result.redirect) redirect(301, result.redirect);
+
+  const [, article] = result.resources;
+  return { article };
+};
+```
+
+## Behavior
+
+- Wrong or missing slug, valid ID → `301` to canonical.
+- Nested routes: each heal layer fixes its own segment; static path parts (e.g. `'details'`) stay as written.
+- Query strings carry over on redirect.
+- Fetch miss → `notFound: true`; you call `error(404)`.
+
+### Deploying
+
+`redirect(301)` in `load` runs on the **server**. Use an adapter that executes server
+`load` at request time — `adapter-vercel`, `adapter-node`, `adapter-cloudflare`, and
+similar.
+
+`adapter-static` with full prerender is a poor fit for self-healing URLs: build output
+cannot emit real HTTP 301s. Prerender only bakes client-side redirect stubs for paths you
+enumerate ahead of time. Canonical pages and marketing sites without dynamic slug healing
+are fine on static; arbitrary wrong URLs are not.
+
+This repo's demo uses `@sveltejs/adapter-vercel` on Vercel so try links show real `301`
+responses.
+
+Default hyphen IDs cannot contain `-` (e.g. UUIDs). Use `TildeIdentifierHandler` for those.
+
+## Customize
+
+Pass only the strategies you need; everything else keeps the default:
+
+```ts
+import {
+  selfheal,
+  SnakeSlugSanitizer,
+  CaseInsensitiveComparator,
+  TildeIdentifierHandler
+} from 'svelte-selfheal';
+
 export const healer = selfheal({
-	sanitize: (slug) => {
-		/* ... */
-	},
-	isEqual: (expectedValue, actualValue) => {
-		/* ... */
-	},
-	identifier: {
-		join(slug, identifier) {
-			/* ... */
-		},
-		separate(slug) {
-			/* ... */
-		}
-	},
-	
+  sanitize: SnakeSlugSanitizer,
+  isEqual: CaseInsensitiveComparator,
+  identifier: TildeIdentifierHandler
 });
 ```
 
-### Using a custom `IdentifierHandler`
+| Export                        | Behavior                                |
+| ----------------------------- | --------------------------------------- |
+| `KebabSlugSanitizer`          | kebab-case, diacritic folding (default) |
+| `SnakeSlugSanitizer`          | snake_case                              |
+| `PassthroughSlugSanitizer`    | trim only — slug already normalized     |
+| `NamedComparator`             | strict `===` (default)                  |
+| `CaseInsensitiveComparator`   | ignore casing differences               |
+| `HyphenIdentifierHandler`     | `slug-id` (default)                     |
+| `UnderscoreIdentifierHandler` | `slug_id`                               |
+| `TildeIdentifierHandler`      | `slug~id` — safe for UUIDs              |
 
-If you need to customize how a slug is joined to a model identifier (which by default is just a hyphen),
-you can create your own `IdentifierHandler` that returns a `join()` and a `separate()` function and supply itduring the initialization of your `healer`.
+## Development
 
-Here is an example using a `_` instead
+The npm package and the demo site share this repo:
 
-```ts
-export const healer = selfheal({
-	identifier: {
-		join(slug, identifier) {
-			return `${slug}_${identifier}`;
-		},
-		separate(slug) {
-			const [identifier, ...rest] = slug.split('_').reverse();
-			return {
-				identifier,
-				slug: rest.reverse().join('_')
-			};
-		}
-	}
-});
+```bash
+pnpm install
+pnpm dev          # http://localhost:5173
+pnpm test
+pnpm check
+pnpm lint
+pnpm knip
+pnpm build        # production build (demo deploys to Vercel)
+pnpm package      # dist/ for npm
 ```
 
-This would result in URLs like `/my-fancy-title_123`, depending of course on how your sanitizer works.
+Set `PUBLIC_SITE_URL` (no trailing slash) in your deployment environment — canonical URLs
+and Open Graph tags read it at runtime. On Vercel, add it under Project → Settings →
+Environment Variables.
+
+```bash
+PUBLIC_SITE_URL=https://your-project.vercel.app pnpm dev
+```
+
+### Deploy the demo
+
+The demo deploys to **Vercel** with `@sveltejs/adapter-vercel`. Connect the GitHub repo;
+Vercel detects SvelteKit automatically. Set `PUBLIC_SITE_URL` to your production origin
+(e.g. `https://your-project.vercel.app`).
+
+Demo load functions: [`src/routes/[id]/+page.server.ts`](src/routes/[id]/+page.server.ts),
+[`src/routes/[id]/details/[innerId]/+page.server.ts`](src/routes/[id]/details/[innerId]/+page.server.ts).
+
+Copy-ready route layouts in [`examples/`](examples/):
+
+| Folder | API | Route shape |
+| ------ | --- | ----------- |
+| [`single-segment-run`](examples/single-segment-run/) | `healer.run()` | `/[id]` |
+| [`nested-stack`](examples/nested-stack/) | `healer.stack()` | `/[id]/details/[innerId]` |
+| [`sync-canonical-redirect`](examples/sync-canonical-redirect/) | `healer.canonicalRedirect()` | data already in `load` |
 
 ## License
 
-Licensed under the [MIT license](https://github.com/dominic-schmid/svelte-selfheal/blob/main/LICENSE.md).
+[MIT](https://github.com/dominic-schmid/svelte-selfheal/blob/main/LICENSE.md)
