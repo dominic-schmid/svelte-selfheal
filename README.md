@@ -1,6 +1,6 @@
 # svelte-selfheal
 
-**[Live demo](https://selfheal.js.org)** · [npm](https://www.npmjs.com/package/svelte-selfheal) · [GitHub](https://github.com/dominic-schmid/svelte-selfheal)
+**[Live demo](https://svelte-selfheal.vercel.app)** · [npm](https://www.npmjs.com/package/svelte-selfheal) · [GitHub](https://github.com/dominic-schmid/svelte-selfheal)
 
 Self-healing URLs for SvelteKit. A route like `/blog/my-fancy-title-5312` looks right in
 search results; your load still fetches article `5312`. Break the slug and the library
@@ -27,6 +27,14 @@ SvelteKit; you call `error()` and `redirect()` in your own `load` functions.
 ```bash
 pnpm add svelte-selfheal
 ```
+
+## Upgrading from 0.1.x
+
+0.3.x replaces `guard` with heal layers (`layer` / `run` / `stack`). Move fetch + segment
+mapping into `healer.layer()`; in `load`, check `result.notFound` and `result.redirect`
+instead of calling `guard` after a manual fetch.
+
+See [CHANGELOG → Migration](CHANGELOG.md#migration) for before/after snippets.
 
 ## Use
 
@@ -154,14 +162,14 @@ and Open Graph tags read it at runtime. On Vercel, add it under Project → Sett
 Environment Variables.
 
 ```bash
-PUBLIC_SITE_URL=https://your-project.vercel.app pnpm dev
+PUBLIC_SITE_URL=https://svelte-selfheal.vercel.app pnpm dev
 ```
 
 ### Deploy the demo
 
 The demo deploys to **Vercel** with `@sveltejs/adapter-vercel`. Connect the GitHub repo;
 Vercel detects SvelteKit automatically. Set `PUBLIC_SITE_URL` to your production origin
-(e.g. `https://your-project.vercel.app`).
+(e.g. `https://svelte-selfheal.vercel.app`).
 
 Demo load functions: [`src/routes/[id]/+page.server.ts`](src/routes/[id]/+page.server.ts),
 [`src/routes/[id]/details/[innerId]/+page.server.ts`](src/routes/[id]/details/[innerId]/+page.server.ts).

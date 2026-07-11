@@ -2,11 +2,17 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/). Versions: [SemVer](https://semver.org/).
 
+## [0.3.1] - 2026-07-11
+
+### Changed
+
+- README: correct live demo URL; add upgrading guide linking to the migration section below.
+
 ## [0.3.0] - 2026-07-09
 
 Heal layers replace `guard`. Define fetch + segment mapping once, call `run` or `stack` in
 `load`, get typed resources and a single redirect when the slug drifts. Demo site ships
-at [selfheal.js.org](https://selfheal.js.org) with copy-ready `examples/`.
+at [svelte-selfheal.vercel.app](https://svelte-selfheal.vercel.app) with copy-ready `examples/`.
 
 ### Breaking
 
@@ -42,7 +48,7 @@ at [selfheal.js.org](https://selfheal.js.org) with copy-ready `examples/`.
 
 ### Migration
 
-**Before (0.2.x):**
+**Before (0.1.x):**
 
 ```ts
 const id = healer.parseId(params.id);
