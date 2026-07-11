@@ -161,17 +161,7 @@ PUBLIC_SITE_URL=https://your-project.vercel.app pnpm dev
 
 The demo deploys to **Vercel** with `@sveltejs/adapter-vercel`. Connect the GitHub repo;
 Vercel detects SvelteKit automatically. Set `PUBLIC_SITE_URL` to your production origin
-(e.g. `https://selfheal.js.org` once the custom domain is wired).
-
-**Optional — `selfheal.js.org` via js.org:** point the subdomain at your Vercel deployment
-in [`cnames_active.js`](https://github.com/js-org/js.org/blob/master/cnames_active.js)
-(alphabetically, after `"selectric"`):
-
-```js
-"selfheal": "your-project.vercel.app",
-```
-
-Then add `selfheal.js.org` as a custom domain in the Vercel project.
+(e.g. `https://your-project.vercel.app`).
 
 Demo load functions: [`src/routes/[id]/+page.server.ts`](src/routes/[id]/+page.server.ts),
 [`src/routes/[id]/details/[innerId]/+page.server.ts`](src/routes/[id]/details/[innerId]/+page.server.ts).
